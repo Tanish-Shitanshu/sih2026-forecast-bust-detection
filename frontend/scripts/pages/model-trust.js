@@ -1,4 +1,5 @@
 import { pseudo } from '../lib/pseudo-random.js';
+import { LEAD_DAYS } from '../lib/constants.js';
 import { SUBDIVISIONS } from '../data/subdivisions.js';
 import { REASONS } from '../data/model-trust-reasons.js';
 import { renderNav } from '../components/nav.js';
@@ -14,7 +15,7 @@ class ModelTrust {
 
   computeVals() {
     const { day } = this.state;
-    const days = Array.from({ length: 10 }, (_, i) => i + 1)
+    const days = Array.from({ length: LEAD_DAYS }, (_, i) => i + 1)
       .map((d) => ({ n: d, activeClass: d === day ? 'active' : '' }));
 
     const regions = SUBDIVISIONS.map((r) => {

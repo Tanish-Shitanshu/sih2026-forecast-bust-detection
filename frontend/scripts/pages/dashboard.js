@@ -1,5 +1,6 @@
 import { pseudo } from '../lib/pseudo-random.js';
 import { bustFor, tierKeyFor, actionFor, TIER_META } from '../lib/bust-risk.js';
+import { LEAD_DAYS } from '../lib/constants.js';
 import { SUBDIVISIONS } from '../data/subdivisions.js';
 import { FACTORS } from '../data/factors.js';
 import { ANALOGS } from '../data/analogs.js';
@@ -22,7 +23,7 @@ class Dashboard {
   computeVals() {
     const { day, selectedId, outcomes, noteDraft } = this.state;
 
-    const days = Array.from({ length: 10 }, (_, i) => i + 1)
+    const days = Array.from({ length: LEAD_DAYS }, (_, i) => i + 1)
       .map((d) => ({ n: d, activeClass: d === day ? 'active' : '' }));
 
     const regions = SUBDIVISIONS.map((r) => {

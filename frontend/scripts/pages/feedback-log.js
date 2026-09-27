@@ -1,5 +1,6 @@
 import { Screen } from '../lib/screen.js';
 import { ROWS, OUTCOME_LABELS } from '../data/feedback-rows.js';
+import { computeFeedbackStats } from '../lib/feedback-stats.js';
 import { renderNav } from '../components/nav.js';
 
 class FeedbackLog extends Screen {
@@ -17,10 +18,7 @@ class FeedbackLog extends Screen {
       outcomeClass: r.outcome, outcomeLabel: OUTCOME_LABELS[r.outcome], by: r.by,
     }));
 
-    const total = ROWS.length;
-    const correctPct = Math.round(100 * ROWS.filter((r) => r.outcome === 'correct').length / total);
-    const incorrectPct = Math.round(100 * ROWS.filter((r) => r.outcome === 'incorrect').length / total);
-    return { filters, rows, stats: { total, correctPct, incorrectPct } };
+    return { filters, rows, stats: computeFeedbackStats() };
   }
 
   template(v) {
