@@ -19,14 +19,15 @@
   line-height: 1.6;
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero ----------
+   .hero is a direct child of #app (display:flex;flex-direction:column).
+   A flex item with `margin: 0 auto` doesn't get the usual block-level
+   auto-margin centering — it falls back to content-based sizing instead of
+   filling max-width. So every section that needs a centered 1100px column
+   is split into a full-width outer (safe as a flex child) and a
+   max-width/margin:auto inner (an ordinary block, where auto-margins work
+   as expected) — the same pattern .feature-section already used. */
 .hero {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: center;
-  max-width: 1100px;
-  margin: 0 auto;
   padding: 64px 24px 56px;
   animation: hero-enter 600ms ease both;
 }
@@ -37,8 +38,17 @@
 @media (prefers-reduced-motion: reduce) {
   .hero { animation: none; }
 }
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
 @media (max-width: 820px) {
-  .hero { grid-template-columns: 1fr; padding-top: 48px; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero { padding-top: 48px; }
 }
 
 .hero-left {
@@ -83,17 +93,18 @@
 }
 .cta-btn-secondary:hover { background: var(--paper-raised); }
 
-.hero-preview { background: var(--paper-raised); border: 1px solid var(--line); padding: 16px; }
+.hero-preview { background: var(--paper-raised); border: 1px solid var(--line); padding: 8px; }
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 .preview-tile {
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: flex-end;
   padding: 5px;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 .preview-tile span {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -126,7 +137,8 @@
 .stat-label { font-size: 12px; color: #AEC0CD; margin-top: 6px; line-height: 1.4; }
 
 /* ---------- How it works ---------- */
-.how-it-works { max-width: 1100px; margin: 0 auto; padding: 64px 24px; }
+.how-it-works { padding: 64px 24px; }
+.how-it-works-inner { max-width: 1100px; margin: 0 auto; }
 .steps { display: flex; position: relative; flex-wrap: wrap; gap: 28px; }
 .steps::before {
   content: '';
@@ -136,6 +148,13 @@
   right: 60px;
   height: 1px;
   background: var(--line);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 800ms ease;
+}
+.steps.line-drawn::before { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .steps::before { transition: none; transform: scaleX(1); }
 }
 @media (max-width: 820px) {
   .steps::before { display: none; }
@@ -174,7 +193,13 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
 }
-.feature-card { background: #fff; border: 1px solid var(--line); padding: 20px; }
+.feature-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 20px;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+.feature-card:hover { transform: translateY(-4px); border-color: var(--structural); }
 .feature-card-title {
   font-family: 'IBM Plex Sans Condensed', system-ui, sans-serif;
   font-size: 15px;
@@ -185,7 +210,26 @@
 .feature-card-desc { font-size: 12px; line-height: 1.65; color: var(--ink-dim); }
 
 /* ---------- Recent activity ---------- */
-.activity-section { max-width: 1100px; margin: 0 auto; padding: 64px 24px; }
+.activity-section { padding: 64px 24px; }
+.activity-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .activity-grid { grid-template-columns: 1fr; }
+}
+.activity-left-title {
+  font-family: 'IBM Plex Sans Condensed', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--structural-deep);
+  margin-bottom: 10px;
+}
+.activity-left-desc { font-size: 14px; line-height: 1.6; color: var(--ink); max-width: 440px; }
 .activity-box { border: 1px solid var(--line); background: #fff; }
 .activity-header {
   padding: 18px 20px;
