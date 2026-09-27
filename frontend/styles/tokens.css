@@ -1,0 +1,20 @@
+:root {
+  --paper: #EEEFE9;
+  --paper-raised: #E4E6DD;
+  --ink: #12181C;
+  --ink-dim: #4B565D;
+  --structural: #1C3A56;
+  --structural-deep: #122A40;
+  --structural-dim: #5C7185;
+  --line: #C7CBC0;
+
+  /* IMD bust-risk warning scale */
+  --imd-green: #1E7A3C;
+  --imd-yellow: #E8B400;
+  --imd-orange: #E8720C;
+  --imd-red: #C62828;
+
+  /* Separate violet scale: model self-confidence, never mixed with bust-risk */
+  --model-uncertain: #6B5CA5;
+  --model-uncertain-soft: #EDE9F6;
+}

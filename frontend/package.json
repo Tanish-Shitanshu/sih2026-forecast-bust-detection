@@ -1,0 +1,12 @@
+{
+  "name": "forecast-trust-console",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Forecast Trust Console frontend prototype for SIH 2026 PS 26079",
+  "scripts": {
+    "dev": "http-server . -p 5173 -c-1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
