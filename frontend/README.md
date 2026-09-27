@@ -1,8 +1,8 @@
-# Forecast Trust Console — frontend
+# Vishwas — frontend
 
-Four screens for the SIH 2026 PS 26079 dashboard: Dashboard (`index.html`),
-Model Trust, Feedback Log, and Methodology (under `pages/`). Plain HTML/CSS/JS,
-no build step or framework.
+Forecast Trust Console, for the SIH 2026 PS 26079 project. A landing page
+(`index.html`) plus four screens under `pages/`: Dashboard, Model Trust,
+Feedback Log, and Methodology. Plain HTML/CSS/JS, no build step or framework.
 
 ## Run locally
 
@@ -15,16 +15,26 @@ Then open http://localhost:5173.
 
 ## Structure
 
-- `index.html`, `pages/*.html` — one shell per screen, each mounting an `#app` root.
-- `scripts/pages/*.js` — per-screen state and rendering logic.
-- `scripts/components/nav.js` — shared command bar / navigation.
+- `index.html` — landing page: hero, "Enter Dashboard" CTA, and nav cards to
+  the four screens.
+- `pages/*.html` — one shell per screen, each mounting an `#app` root.
+- `scripts/pages/*.js` — per-screen state and rendering logic. Dashboard and
+  Model Trust manage their region-grid tiles (and Dashboard its detail
+  drawer) as persistent DOM nodes updated in place, rather than fully
+  re-rendered, so their CSS transitions can animate.
+- `scripts/components/nav.js` — shared command bar: brand (links to the
+  landing page) + navigation.
 - `scripts/lib/` — the bust-risk formula, the deterministic pseudo-random
-  generator behind the mock data, and a small state → render base class.
+  generator behind the mock data, a small state → render base class used by
+  the simpler screens, and the count-up animation helper.
 - `scripts/data/` — mock subdivisions, contributing factors, historical
   analogs, and feedback-log rows.
 - `styles/tokens.css` — design tokens: the IMD green/yellow/orange/red
   bust-risk scale, and the separate violet scale for model self-confidence.
-- `styles/base.css` — shared component styles (nav, buttons, tables, chips).
+- `styles/base.css` — shared component styles (nav, buttons, tables, chips,
+  region-tile/drawer transitions).
+- `styles/landing.css` — landing-page-only layout (hero, CTA, nav cards,
+  footer), built from the same tokens.
 
 ## Provenance
 

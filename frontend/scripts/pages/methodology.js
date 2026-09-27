@@ -3,7 +3,7 @@ import { renderNav } from '../components/nav.js';
 document.getElementById('app').innerHTML = `
 ${renderNav({
   active: 'methodology',
-  dashboardHref: '../index.html', modelTrustHref: 'model-trust.html',
+  homeHref: '../index.html', dashboardHref: 'dashboard.html', modelTrustHref: 'model-trust.html',
   feedbackLogHref: 'feedback-log.html', methodologyHref: 'methodology.html',
   showTimestamp: false,
 })}

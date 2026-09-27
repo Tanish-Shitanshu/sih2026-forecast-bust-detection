@@ -27,7 +27,7 @@ class FeedbackLog extends Screen {
     return `
     ${renderNav({
       active: 'feedback-log',
-      dashboardHref: '../index.html', modelTrustHref: 'model-trust.html',
+      homeHref: '../index.html', dashboardHref: 'dashboard.html', modelTrustHref: 'model-trust.html',
       feedbackLogHref: 'feedback-log.html', methodologyHref: 'methodology.html',
       showTimestamp: false,
     })}
@@ -39,15 +39,15 @@ class FeedbackLog extends Screen {
       </div>
       <div style="display:flex;gap:24px;margin-left:auto">
         <div>
-          <div class="face-mono" style="font-size:22px;font-weight:600">${v.stats.total}</div>
+          <div class="face-mono" style="font-size:22px;font-weight:600" data-stat="fb-total" data-value="${v.stats.total}">${v.stats.total}</div>
           <div style="font-size:11px;color:var(--ink-dim)">Entries logged</div>
         </div>
         <div>
-          <div class="face-mono" style="font-size:22px;font-weight:600;color:var(--imd-green)">${v.stats.correctPct}%</div>
+          <div class="face-mono" style="font-size:22px;font-weight:600;color:var(--imd-green)" data-stat="fb-correct" data-value="${v.stats.correctPct}" data-suffix="%">${v.stats.correctPct}%</div>
           <div style="font-size:11px;color:var(--ink-dim)">Confirmed correct</div>
         </div>
         <div>
-          <div class="face-mono" style="font-size:22px;font-weight:600;color:var(--imd-red)">${v.stats.incorrectPct}%</div>
+          <div class="face-mono" style="font-size:22px;font-weight:600;color:var(--imd-red)" data-stat="fb-incorrect" data-value="${v.stats.incorrectPct}" data-suffix="%">${v.stats.incorrectPct}%</div>
           <div style="font-size:11px;color:var(--ink-dim)">Confirmed incorrect</div>
         </div>
       </div>

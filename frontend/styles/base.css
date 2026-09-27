@@ -15,7 +15,7 @@ button { font-family: inherit; cursor: pointer; }
 /* Command bar navigation */
 .navlink {
   padding: 0 14px;
-  height: 64px;
+  align-self: stretch;
   display: flex;
   align-items: center;
   font-size: 14px;
@@ -52,6 +52,7 @@ button { font-family: inherit; cursor: pointer; }
   gap: 2px;
   position: relative;
   outline-offset: -2px;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 .regionbtn:hover { filter: brightness(1.08); }
 .regionbtn.selected { outline: 2px solid var(--ink); outline-offset: -3px; }
@@ -87,7 +88,26 @@ textarea {
   justify-content: flex-end;
   align-items: flex-start;
   gap: 2px;
+  transition: background-color 200ms ease, color 200ms ease;
 }
+
+/* Dashboard region detail drawer: slides in from the right */
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 460px;
+  background: #fff;
+  border-left: 2px solid var(--structural);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 250ms ease;
+  pointer-events: none;
+}
+.drawer.drawer-open { transform: translateX(0); pointer-events: auto; }
 
 /* Feedback Log filter chips */
 .chip {
