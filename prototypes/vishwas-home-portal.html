@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vishwas | Forecast Trust Console, NCMRWF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F6FA;--panel:#FFFFFF;--text:#1D2733;--muted:#566476;--line:#C9D3E0;
+  --blue:#1A4E9B;--blue2:#12386F;--navy:#0C2340;--sky:#EAF2FA;--tick:#D5E7F8;--link:#1A4E9B;--sel:#0C2340;
+  --ink:#0C2340;--accent:#1A4E9B;--steel:#2C6DB0;--teal:#167A83;--violet:#5B3FA0;
+  --g:#1E7A3C;--y:#F2B300;--o:#E8720C;--r:#C62828;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0A1522;--panel:#102135;--text:#E6EEF7;--muted:#A3B3C6;--line:#2A4360;--sky:#0E2135;--tick:#173553;--link:#8DB8F2;--sel:#FFFFFF;--navy:#08121F;--ink:#E6EEF7;--accent:#8DB8F2}
+}
+:root[data-theme="dark"]{--bg:#0A1522;--panel:#102135;--text:#E6EEF7;--muted:#A3B3C6;--line:#2A4360;--sky:#0E2135;--tick:#173553;--link:#8DB8F2;--sel:#FFFFFF;--navy:#08121F;--ink:#E6EEF7;--accent:#8DB8F2}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans","Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.9375rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--link)}
+ul,ol{margin:0;padding:0;list-style:none}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:3px solid #F2B300;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+.vsep{font-style:normal;opacity:.55;margin:0 .6rem}
+
+/* top strip and utility bar */
+.tri{height:5px;background:linear-gradient(90deg,#FF9933 0 33.33%,#FFFFFF 33.33% 66.66%,#138808 66.66% 100%)}
+.util{background:var(--sky);border-bottom:1px solid var(--line);font-size:.8125rem}
+.util-in{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:34px;flex-wrap:wrap}
+.util a{text-decoration:none}
+.util a:hover{text-decoration:underline}
+.util button{background:none;border:0;padding:2px 6px}
+.util button:hover{text-decoration:underline}
+.util [aria-pressed="true"]{font-weight:700;text-decoration:underline}
+.ts button{border:1px solid var(--line);background:var(--panel);min-width:30px;margin-left:2px;padding:1px 6px}
+
+/* header */
+.hdr{background:var(--panel);border-bottom:1px solid var(--line)}
+.hdr-in{display:flex;align-items:center;gap:24px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.gov{display:flex;align-items:center;gap:12px}
+.emblem{width:52px;height:60px;border:1px dashed var(--muted);display:grid;place-items:center;font-size:.6875rem;color:var(--muted);flex:none}
+.gov-t{display:grid;gap:2px;font-size:.875rem;line-height:1.35}
+.gov-t strong{font-weight:600}
+.brand{display:flex;align-items:center;gap:12px;margin-left:auto}
+.logo{width:48px;height:48px;border-radius:50%;background:var(--navy);border:2px solid var(--ink);color:#fff;display:grid;place-items:center;font-size:1.5rem;font-weight:700;flex:none}
+.wm{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--ink)}
+.sub{font-weight:600;font-size:.9375rem}
+.sub2{font-size:.8125rem;color:var(--muted)}
+.search{display:flex}
+.search input{width:210px;padding:8px 10px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-right:0;font:inherit;font-size:.875rem}
+.search button{background:var(--blue);color:#fff;border:1px solid var(--blue);padding:8px 14px;font-size:.875rem;font-weight:600}
+
+/* nav */
+.nav{background:var(--blue)}
+.nav ul{display:flex;flex-wrap:wrap}
+.nav a{display:block;padding:11px 18px;color:#fff;text-decoration:none;font-weight:600;font-size:.9375rem;border-bottom:3px solid transparent}
+.nav a:hover{background:var(--blue2)}
+.nav a[aria-current="page"]{background:var(--blue2);border-bottom-color:#F2B300}
+
+/* four status blocks */
+.blocks{display:grid;grid-template-columns:repeat(4,1fr);padding:0;margin-top:0}
+.blk{display:flex;flex-direction:column;gap:6px;padding:16px 20px;color:#fff;text-decoration:none;min-height:132px}
+.blk:hover{filter:brightness(1.08)}
+.blk-t{font-weight:700;font-size:1.0625rem}
+.blk-m{display:flex;align-items:baseline;gap:10px;line-height:1.25}
+.blk-m b{font-size:2.25rem;font-weight:800;font-variant-numeric:tabular-nums;min-width:2ch}
+.blk-m span{font-size:.875rem}
+.blk-l{margin-top:auto;font-size:.8125rem;font-weight:600;text-decoration:underline}
+.b-red{background:var(--r)}.b-vio{background:var(--violet)}.b-blu{background:var(--steel)}.b-teal{background:var(--teal)}
+
+/* ticker */
+.ticker{background:var(--tick);border-bottom:1px solid var(--line);display:flex;align-items:stretch;font-size:.875rem}
+.tk-l{background:var(--navy);color:#fff;font-weight:700;padding:7px 16px;flex:none}
+.tk-v{overflow:hidden;flex:1;display:flex;align-items:center}
+.tk-track{display:inline-flex;white-space:nowrap;animation:tk 60s linear infinite}
+.tk-c{display:inline-block;padding:7px 3rem 7px 1.5rem}
+.ticker:hover .tk-track,.ticker.paused .tk-track{animation-play-state:paused}
+.tk-b{background:none;border:0;border-left:1px solid var(--line);padding:0 14px;font-size:.8125rem;font-weight:600}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* main grid */
+.grid3{display:grid;grid-template-columns:5fr 3fr 4fr;gap:20px;margin-top:22px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);padding:14px 16px}
+.ph{font-size:1.0625rem;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}
+.tabs{display:flex;border-bottom:2px solid var(--blue);margin:-14px -16px 12px}
+.tab{background:none;border:0;padding:10px 16px;font-weight:600}
+.tab[aria-selected="true"]{background:var(--blue);color:#fff}
+.dayrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.dl{font-weight:600;font-size:.875rem}
+.days{display:flex;gap:3px;flex-wrap:wrap}
+.day{width:32px;height:30px;border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-weight:600;font-size:.8125rem}
+.day[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.mh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.mh .mt{margin-bottom:0}
+.play{border:1px solid var(--line);background:var(--panel);padding:4px 10px;font-size:.8125rem;font-weight:600}
+.mt{font-size:.9375rem;font-weight:700;margin-bottom:6px}
+.carto{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(9,52px);gap:3px;background:var(--sky);padding:6px}
+.t{border:0;padding:4px 6px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;line-height:1.15;transition:background-color .3s,color .3s,opacity .2s;min-width:0}
+.t b{font-size:.75rem;font-weight:700;white-space:nowrap}
+.t span{font-size:.75rem;font-variant-numeric:tabular-nums}
+.t:hover{filter:brightness(1.1)}
+.t.sel{outline:3px solid var(--sel);outline-offset:1px;position:relative;z-index:1}
+.t.dim{opacity:.22}
+.t.flash{animation:fl 1.2s ease-out 1}
+@keyframes fl{0%,60%{outline:4px solid #F2B300;outline-offset:3px}100%{outline-color:transparent}}
+.lg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8125rem;margin-top:10px}
+.lg li{display:flex;align-items:center;gap:6px}
+.lg i{display:inline-block;width:14px;height:14px;border:1px solid rgba(0,0,0,.25)}
+.note{font-size:.8125rem;color:var(--muted);margin-top:8px}
+
+/* selected subdivision card */
+.sel-card{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.sel-card .ph{color:#fff;border-bottom-color:rgba(255,255,255,.35)}
+.sname{font-size:1.1875rem;font-weight:700;line-height:1.25}
+.scode{font-size:.8125rem;opacity:.85;margin-bottom:6px}
+.sbig{display:flex;align-items:baseline;gap:2px;margin:4px 0 8px;flex-wrap:wrap}
+.sbig>span:first-child{font-size:3rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.sbig small{font-size:1.5rem;font-weight:700}
+.sbl{font-size:.8125rem;margin-left:8px;opacity:.9}
+.chip{display:inline-block;padding:3px 10px;font-weight:700;font-size:.8125rem}
+.sdl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:12px 0;font-size:.8125rem}
+.sdl dt{opacity:.8}
+.sdl dd{margin:0;font-weight:600}
+.sh2{font-size:.875rem;font-weight:700;margin:14px 0 6px;padding-top:10px;border-top:1px solid rgba(255,255,255,.25)}
+.fac li{margin-bottom:8px;font-size:.8125rem}
+.fac .fr{display:flex;align-items:center;gap:8px;margin-top:3px}
+.fac .fb{flex:1;height:7px;background:rgba(255,255,255,.2)}
+.fac .fb i{display:block;height:100%}
+.fac .fv{font-weight:700;font-variant-numeric:tabular-nums;min-width:3.2ch;text-align:right}
+#s-an{font-size:.8125rem}
+.oc{display:flex;gap:6px}
+.oc button{flex:1;background:transparent;color:#fff;border:1px solid #fff;padding:6px 4px;font-weight:600;font-size:.8125rem}
+.oc button:hover{background:#fff;color:var(--blue2)}
+.ocmsg{font-size:.8125rem;min-height:1.3em;margin-top:6px}
+
+/* right column */
+.rank li{margin-bottom:2px}
+.rk{width:100%;display:grid;grid-template-columns:1.4rem 1fr 74px 3ch;align-items:center;gap:8px;background:none;border:0;padding:5px 4px;text-align:left;font-size:.8125rem}
+.rk:hover,.rk.on{background:var(--sky)}
+.rn{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.rname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbar{height:9px;background:var(--sky);display:block}
+.rbar i{display:block;height:100%}
+.rv{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.tbl{width:100%;border-collapse:collapse;font-size:.8125rem}
+.tbl th{text-align:left;font-weight:700;border-bottom:2px solid var(--line);padding:5px 6px}
+.tbl td{border-bottom:1px solid var(--line);padding:6px;vertical-align:top}
+.tbl td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:1px 9px;font-weight:700;font-size:.75rem}
+.pill.correct{background:#DCEFE1;color:#14522A}
+.pill.incorrect{background:#F7DADA;color:#8E1B1B}
+.pill.partial{background:#FBEBC0;color:#6B4D00}
+.tbl tr.fresh td{animation:nw 2.4s ease-out 1}
+@keyframes nw{from{background:#FFF3B0}to{background:transparent}}
+
+/* regional band */
+.band{background:var(--blue);color:#fff;margin-top:26px;padding:22px 0 26px}
+.band h2{font-size:1.25rem;font-weight:700;margin-bottom:4px}
+.band p{font-size:.875rem;opacity:.92;margin-bottom:14px}
+.regions{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.rc{display:flex;flex-direction:column;gap:6px;text-align:left;background:#1F5BAD;border:1px solid rgba(255,255,255,.4);color:#fff;padding:14px}
+.rc:hover{background:#2564B8}
+.rc.on{outline:3px solid #fff;outline-offset:2px}
+.rc-n{font-size:1.0625rem;font-weight:700}
+.rc-m b{font-size:1.5rem}
+.rc-a b{font-variant-numeric:tabular-nums}
+.rc-bar{display:flex;height:10px;background:rgba(255,255,255,.25)}
+.rc-bar i{display:block}
+.rc-k{font-size:.75rem;opacity:.92}
+.rc-m,.rc-a{font-size:.875rem}
+
+/* about */
+.sec{margin-top:30px}
+.sec>h2{font-size:1.25rem;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.two h3,.srcs h3{font-size:1rem;font-weight:700;margin-bottom:6px}
+.srcs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.srcs .panel{border-top:4px solid var(--blue)}
+.srcs p{font-size:.875rem}
+
+/* footer */
+.foot{background:var(--sky);border-top:4px solid var(--blue);margin-top:34px;padding-top:26px}
+.foot-g{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-bottom:20px}
+.foot h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+.foot li{border-bottom:1px dotted var(--line);padding:5px 0;font-size:.875rem}
+.foot a{text-decoration:none}
+.foot a:hover{text-decoration:underline}
+.foot p{font-size:.875rem;margin-bottom:6px}
+.foot-b{border-top:1px solid var(--line);padding:12px 0 22px;font-size:.8125rem;color:var(--muted)}
+
+/* high contrast mode */
+body.hc{--bg:#000;--panel:#000;--text:#fff;--muted:#fff;--line:#fff;--sky:#000;--link:#FFE600;--blue:#000;--blue2:#000;--navy:#000;--tick:#000;--sel:#FFE600;--ink:#fff;--accent:#FFE600}
+body.hc a{text-decoration:underline}
+body.hc .nav{border-top:2px solid #fff;border-bottom:2px solid #fff}
+body.hc .tk-l,body.hc .search button,body.hc .day[aria-pressed="true"],body.hc .tab[aria-selected="true"]{background:#fff;color:#000}
+body.hc .sel-card,body.hc .band,body.hc .rc{border:2px solid #fff}
+body.hc .logo{background:#fff;color:#000}
+body.hc .ph,body.hc .sec>h2,body.hc .wm{color:#fff}
+
+@media (max-width:1020px){
+  .grid3{grid-template-columns:1fr}
+  .blocks{grid-template-columns:repeat(2,1fr)}
+  .regions{grid-template-columns:repeat(2,1fr)}
+  .foot-g{grid-template-columns:repeat(2,1fr)}
+  .brand{margin-left:0}
+}
+@media (max-width:640px){
+  .blocks,.regions,.two,.srcs,.foot-g{grid-template-columns:1fr}
+  .carto{grid-template-rows:repeat(9,46px)}
+  .search input{width:150px}
+  .nav a{padding:10px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .tk-track{animation:none}
+  .tk-v{overflow:auto}
+  .t,.t.flash,.tbl tr.fresh td{transition:none;animation:none}
+}
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="tri" aria-hidden="true"></div>
+
+<div class="util">
+  <div class="wrap util-in">
+    <div>
+      <a href="#main" data-i18n="skip">Skip to main content</a><i class="vsep">|</i><a href="#help" data-i18n="sr">Screen reader access</a>
+    </div>
+    <div>
+      <span class="ts" role="group" aria-label="Text size">
+        <button type="button" data-size="87.5" aria-label="Decrease text size">A-</button><button type="button" data-size="100" aria-label="Default text size">A</button><button type="button" data-size="112.5" aria-label="Increase text size">A+</button>
+      </span><i class="vsep">|</i><button type="button" id="hc" aria-pressed="false" data-i18n="hc">High contrast</button><i class="vsep">|</i><span role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="hi" lang="hi" aria-pressed="false">हिंदी</button></span>
+    </div>
+  </div>
+</div>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <div class="gov">
+      <div class="emblem" role="img" aria-label="Emblem placeholder"><span>Emblem</span></div>
+      <div class="gov-t">
+        <span><strong lang="hi">पृथ्वी विज्ञान मंत्रालय</strong><i class="vsep">|</i>Ministry of Earth Sciences</span>
+        <span><strong lang="hi">भारत सरकार</strong><i class="vsep">|</i>Government of India</span>
+      </div>
+    </div>
+    <div class="brand">
+      <div class="logo" lang="hi" aria-hidden="true">वि</div>
+      <div>
+        <div class="wm">Vishwas</div>
+        <div class="sub" data-i18n="sub">Forecast Trust Console</div>
+        <div class="sub2" data-i18n="org">National Centre for Medium Range Weather Forecasting</div>
+      </div>
+    </div>
+    <form class="search" role="search" id="sform">
+      <label class="sr" for="q">Search subdivision</label>
+      <input id="q" list="subs" autocomplete="off" placeholder="Search subdivision">
+      <datalist id="subs"></datalist>
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</header>
+
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <ul>
+      <li><a href="#top" data-nav="home" aria-current="page" data-i18n="n1">Home</a></li>
+      <li><a href="#map" data-nav="bust" data-i18n="n2">Dashboard</a></li>
+      <li><a href="#map" data-nav="trust" data-i18n="n3">Model Trust</a></li>
+      <li><a href="#feedback" data-nav="fb" data-i18n="n4">Feedback Log</a></li>
+      <li><a href="#about" data-nav="about" data-i18n="n5">Methodology</a></li>
+      <li><a href="#sources" data-nav="src" data-i18n="n6">Data sources</a></li>
+      <li><a href="#help" data-nav="help" data-i18n="n7">Help</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main">
+  <section class="wrap blocks" aria-label="Status summary">
+    <a class="blk b-red" href="#map" data-go="bust">
+      <span class="blk-t" data-i18n="b1">Bust-risk warnings</span>
+      <span class="blk-m"><b id="b-red">0</b><span id="b-red-t"></span></span>
+      <span class="blk-l">Open the map</span>
+    </a>
+    <a class="blk b-vio" href="#map" data-go="trust">
+      <span class="blk-t" data-i18n="b2">Model confidence</span>
+      <span class="blk-m"><b id="b-vio">0</b><span id="b-vio-t"></span></span>
+      <span class="blk-l">Open the confidence map</span>
+    </a>
+    <a class="blk b-blu" href="#feedback" data-go="fb">
+      <span class="blk-t" data-i18n="b3">Outcome log</span>
+      <span class="blk-m"><b id="b-fb">0</b><span id="b-fb-t"></span></span>
+      <span class="blk-l">Open the outcome log</span>
+    </a>
+    <a class="blk b-teal" href="#about" data-go="about">
+      <span class="blk-t" data-i18n="b4">Methodology and data</span>
+      <span class="blk-m"><b>3</b><span>data sources: ERA5, IMD Gridded Rainfall, NCMRWF NWP archives</span></span>
+      <span class="blk-l">Read the methodology</span>
+    </a>
+  </section>
+
+  <div class="ticker" id="ticker">
+    <span class="tk-l" data-i18n="tk">Bulletin</span>
+    <div class="tk-v"><div class="tk-track" aria-live="off"><span class="tk-c"></span><span class="tk-c" aria-hidden="true"></span></div></div>
+    <button type="button" class="tk-b" id="tkb">Pause</button>
+  </div>
+
+  <section class="wrap grid3" id="map" aria-label="Map and selected subdivision">
+    <div class="panel">
+      <div class="tabs" role="tablist" aria-label="Map type">
+        <button type="button" role="tab" class="tab" data-tab="bust" aria-selected="true" aria-controls="carto" data-i18n="tab1">Bust-risk map</button>
+        <button type="button" role="tab" class="tab" data-tab="trust" aria-selected="false" aria-controls="carto" data-i18n="tab2">Model confidence</button>
+      </div>
+      <div class="dayrow">
+        <span class="dl">Lead day</span>
+        <div class="days" id="days" role="group" aria-label="Lead day"></div>
+      </div>
+      <div class="mh"><h2 class="mt" id="map-h">Bust-risk map, Day 3</h2><button type="button" class="play" id="play">Pause</button></div>
+      <div class="carto" id="carto"></div>
+      <ul class="lg" id="lg"></ul>
+      <p class="note">Illustrative data, not connected to a live feed. Select a subdivision to see its detail.</p>
+    </div>
+
+    <aside class="panel sel-card" aria-label="Selected subdivision">
+      <h2 class="ph" data-i18n="h2">Selected subdivision</h2>
+      <div class="sname" id="s-name"></div>
+      <div class="scode" id="s-code"></div>
+      <div class="sbig"><span id="s-p">0</span><small>%</small><span class="sbl" id="s-bl"></span></div>
+      <span class="chip" id="s-tier"></span>
+      <dl class="sdl">
+        <dt>Probability band</dt><dd id="s-band"></dd>
+        <dt>Model self-confidence</dt><dd id="s-conf"></dd>
+        <dt>Recommended action</dt><dd id="s-act"></dd>
+      </dl>
+      <h3 class="sh2">Top contributing factors</h3>
+      <ul class="fac" id="s-fac"></ul>
+      <h3 class="sh2">Closest historical case</h3>
+      <p id="s-an"></p>
+      <h3 class="sh2">Mark outcome for this reading</h3>
+      <div class="oc">
+        <button type="button" data-oc="correct">Correct</button>
+        <button type="button" data-oc="incorrect">Incorrect</button>
+        <button type="button" data-oc="partial">Partial</button>
+      </div>
+      <p class="ocmsg" id="ocmsg" role="status"></p>
+    </aside>
+
+    <div class="panel">
+      <h2 class="ph" id="rank-h">Highest bust risk, Day 3</h2>
+      <ol class="rank" id="rank"></ol>
+      <h2 class="ph" id="feedback" data-i18n="h4" style="margin-top:20px">Recent outcomes</h2>
+      <table class="tbl">
+        <thead><tr><th>Date</th><th>Subdivision</th><th>Day</th><th>Outcome</th></tr></thead>
+        <tbody id="fb"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band" aria-label="Regional summary">
+    <div class="wrap">
+      <h2 id="reg-h" data-i18n="h3">Regional summary</h2>
+      <p id="reg-p">Select a region to highlight its subdivisions on the map.</p>
+      <div class="regions" id="regions"></div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="sec" id="about">
+      <h2 data-i18n="h5">About Vishwas</h2>
+      <div class="two">
+        <div>
+          <h3>What it does</h3>
+          <p>It looks at an already-issued NCMRWF and IMD forecast for Day 1 to Day 10 and estimates how likely that forecast is to bust, meaning a large deviation between the forecast and what actually happens, before the outcome is known. It flags which subdivisions and lead days deserve extra caution, so a duty forecaster can weigh the official guidance with calibrated confidence.</p>
+        </div>
+        <div>
+          <h3>What it does not do</h3>
+          <p>It does not forecast the weather itself, and it does not replace or override IMD or NCMRWF guidance. It does not issue public warnings, and it is not a substitute for the duty forecaster's judgment. It is a second opinion on how much to trust the first one.</p>
+        </div>
+      </div>
+      <div class="two" style="margin-top:20px">
+        <div>
+          <h3>How the bust-risk estimate is built</h3>
+          <p>For each subdivision and lead day, the system compares characteristics of the current forecast pattern (moisture flux, upper-air trough position, sea-surface temperature anomalies, ensemble spread and related fields) against a historical record of past forecasts and their verified outcomes. Where the current pattern closely resembles situations that busted before, the estimate rises.</p>
+        </div>
+        <div>
+          <h3>Model self-confidence</h3>
+          <p>Reported separately, on a violet scale that never uses the warning colors. It reflects how much historical precedent exists for the current pattern, not how severe the weather is expected to be.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="sources">
+      <h2>Data sources</h2>
+      <div class="srcs">
+        <div class="panel"><h3>ERA5 reanalysis</h3><p>ECMWF's global reanalysis, used as a verification reference for past atmospheric states.</p></div>
+        <div class="panel"><h3>IMD Gridded Rainfall</h3><p>India Meteorological Department's gridded daily rainfall archive, used to verify past forecast outcomes at subdivision level.</p></div>
+        <div class="panel"><h3>NCMRWF NWP archives</h3><p>Archived numerical weather prediction runs, used to build the historical bust record this tool learns from.</p></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot" id="help">
+  <div class="wrap foot-g">
+    <div>
+      <h3>Sections</h3>
+      <ul>
+        <li><a href="#top">Home</a></li>
+        <li><a href="#map">Bust-risk map</a></li>
+        <li><a href="#map" data-nav="trust">Model confidence map</a></li>
+        <li><a href="#feedback">Outcome log</a></li>
+        <li><a href="#about">Methodology</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Data sources</h3>
+      <ul>
+        <li>ERA5 reanalysis</li>
+        <li>IMD Gridded Rainfall</li>
+        <li>NCMRWF NWP archives</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Accessibility</h3>
+      <ul>
+        <li>Text size controls in the top bar</li>
+        <li>High contrast mode in the top bar</li>
+        <li>Every map value is also shown as text</li>
+        <li>Keyboard and screen reader operable</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Ownership</h3>
+      <p>Ministry of Earth Sciences, Government of India</p>
+      <p>National Centre for Medium Range Weather Forecasting (NCMRWF)</p>
+      <p>Prototype built for Smart India Hackathon 2026, Problem Statement 26079: AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts.</p>
+    </div>
+  </div>
+  <div class="wrap foot-b">Last reviewed: 28 September 2026<i class="vsep">|</i>Illustrative data, not connected to a live feed</div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var RM=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+
+var SUBS=[
+{id:1,name:"Jammu, Kashmir & Ladakh",code:"J&K",col:3,row:1,seed:11},
+{id:2,name:"Himachal Pradesh",code:"HP",col:3,row:2,seed:47},
+{id:3,name:"Punjab",code:"PB",col:2,row:2,seed:23},
+{id:4,name:"Arunachal Pradesh",code:"AR",col:6,row:2,seed:59},
+{id:5,name:"West Rajasthan",code:"W.RJ",col:1,row:3,seed:31},
+{id:6,name:"Haryana, Chandigarh & Delhi",code:"HR/DL",col:2,row:3,seed:17},
+{id:7,name:"West Uttar Pradesh",code:"W.UP",col:3,row:3,seed:53},
+{id:8,name:"East Uttar Pradesh",code:"E.UP",col:4,row:3,seed:29},
+{id:9,name:"Sub-Himalayan West Bengal & Sikkim",code:"SIK/NWB",col:5,row:3,seed:41},
+{id:10,name:"Assam & Meghalaya",code:"ASM",col:6,row:3,seed:13},
+{id:11,name:"East Rajasthan",code:"E.RJ",col:2,row:4,seed:37},
+{id:12,name:"Bihar",code:"BR",col:4,row:4,seed:19},
+{id:13,name:"Gangetic West Bengal",code:"GWB",col:5,row:4,seed:61},
+{id:14,name:"Nagaland, Manipur, Mizoram & Tripura",code:"NE.HL",col:6,row:4,seed:7},
+{id:15,name:"Gujarat Region",code:"GJ",col:1,row:5,seed:43},
+{id:16,name:"West Madhya Pradesh",code:"W.MP",col:2,row:5,seed:27},
+{id:17,name:"East Madhya Pradesh",code:"E.MP",col:3,row:5,seed:51},
+{id:18,name:"Jharkhand",code:"JH",col:4,row:5,seed:9},
+{id:19,name:"Odisha",code:"OD",col:5,row:5,seed:33},
+{id:20,name:"Saurashtra & Kutch",code:"SAU/KCH",col:1,row:6,seed:57},
+{id:21,name:"Madhya Maharashtra",code:"MDH.MH",col:2,row:6,seed:21},
+{id:22,name:"Vidarbha",code:"VID",col:3,row:6,seed:49},
+{id:23,name:"Chhattisgarh",code:"CG",col:4,row:6,seed:15},
+{id:24,name:"Konkan & Goa",code:"KNK/GA",col:1,row:7,seed:63},
+{id:25,name:"Marathwada",code:"MWD",col:2,row:7,seed:25},
+{id:26,name:"Telangana",code:"TG",col:3,row:7,seed:45},
+{id:27,name:"Coastal Andhra Pradesh",code:"CST.AP",col:4,row:7,seed:5},
+{id:28,name:"Coastal Karnataka",code:"CST.KA",col:1,row:8,seed:39},
+{id:29,name:"North Interior Karnataka",code:"NI.KA",col:2,row:8,seed:55},
+{id:30,name:"Rayalaseema",code:"RYL",col:3,row:8,seed:3},
+{id:31,name:"Kerala",code:"KL",col:1,row:9,seed:35},
+{id:32,name:"South Interior Karnataka",code:"SI.KA",col:2,row:9,seed:65},
+{id:33,name:"Tamil Nadu & Puducherry",code:"TN/PY",col:3,row:9,seed:67}
+];
+var FACTORS=["Moisture flux convergence anomaly","Upper-air trough phasing offset","Bay of Bengal SST anomaly","Arabian Sea SST anomaly","NWP ensemble spread","Western disturbance interaction","Orographic enhancement uncertainty","Monsoon trough position offset","Land-sea thermal contrast anomaly","Station density in this subdivision","Analog-period base rate","Boundary-layer moisture mismatch"];
+var ANALOGS=[
+{date:"19 Aug 2018",desc:"Extreme monsoon depression, Kerala coast",outcome:"Guidance under-forecast rainfall by over 60 mm in 24 hours"},
+{date:"3 May 2019",desc:"Cyclone Fani landfall, Odisha coast",outcome:"Track held within 15 km, low bust"},
+{date:"1 Dec 2015",desc:"Prolonged deep depression, Tamil Nadu coast",outcome:"Rainfall intensity underestimated by NWP guidance"},
+{date:"18 Jul 2021",desc:"Cloudburst event, Uttarakhand hills",outcome:"Localized intensity missed by grid-scale guidance"},
+{date:"20 May 2020",desc:"Cyclone Amphan landfall, West Bengal coast",outcome:"Track verified, intensity slightly under-called"},
+{date:"26 Jul 2005",desc:"Extreme single-day rainfall, Konkan coast",outcome:"Severe bust, convective intensification missed"},
+{date:"28 May 2024",desc:"Prolonged heatwave spell, Vidarbha",outcome:"Duration under-forecast by 2 to 3 days"},
+{date:"9 Aug 2023",desc:"Flash-flood spell, Himachal hills",outcome:"Orographic rainfall enhancement under-resolved"}
+];
+var REASONS=["Sparse historical analog data","Pattern outside training climatology","Low ensemble agreement among NWP members","Recent sensor or station gaps in this subdivision","Rare synoptic configuration for this lead time"];
+var TIERS=[
+{k:"green",lab:"Green, no warning",short:"No warning",max:.18,band:"0% to 18%",bg:"#1E7A3C",fg:"#FFFFFF",act:"No action needed. The forecast is reliable at this lead time."},
+{k:"yellow",lab:"Yellow, watch",short:"Watch",max:.38,band:"18% to 38%",bg:"#F2B300",fg:"#14181C",act:"Cross-check the short-range nowcast before briefing."},
+{k:"orange",lab:"Orange, alert",short:"Alert",max:.62,band:"38% to 62%",bg:"#E8720C",fg:"#14181C",act:"Escalate to the duty forecaster for manual review."},
+{k:"red",lab:"Red, warning",short:"Warning",max:1.01,band:"62% to 100%",bg:"#C62828",fg:"#FFFFFF",act:"Escalate immediately. Treat the forecast with strong caution."}
+];
+var VIO=[{max:.35,bg:"#F3F0FA",fg:"#14181C",lab:"Typical"},{max:.55,bg:"#D8CFEF",fg:"#14181C",lab:"Slightly reduced"},{max:.72,bg:"#A692D1",fg:"#14181C",lab:"Reduced"},{max:9,bg:"#6B5CA5",fg:"#FFFFFF",lab:"Substantially reduced"}];
+var RG=[
+{k:"nw",name:"Northwest India",codes:["J&K","HP","PB","HR/DL","W.RJ","E.RJ","W.UP","E.UP"]},
+{k:"ci",name:"Central India",codes:["GJ","SAU/KCH","W.MP","E.MP","CG","MDH.MH","MWD","VID","KNK/GA"]},
+{k:"sp",name:"South Peninsula",codes:["TG","CST.AP","RYL","CST.KA","NI.KA","SI.KA","KL","TN/PY"]},
+{k:"ne",name:"East and Northeast India",codes:["BR","JH","OD","GWB","SIK/NWB","ASM","AR","NE.HL"]}
+];
+RG.forEach(function(r){r.ids=r.codes.map(function(c){return SUBS.filter(function(s){return s.code===c})[0].id})});
+var FB=[
+{date:"25 Sep 2026",region:"Coastal Andhra Pradesh",leadDay:2,predicted:71,outcome:"incorrect"},
+{date:"25 Sep 2026",region:"Konkan & Goa",leadDay:4,predicted:58,outcome:"partial"},
+{date:"24 Sep 2026",region:"Vidarbha",leadDay:6,predicted:22,outcome:"correct"},
+{date:"24 Sep 2026",region:"Gangetic West Bengal",leadDay:3,predicted:66,outcome:"incorrect"},
+{date:"23 Sep 2026",region:"Kerala",leadDay:1,predicted:34,outcome:"correct"},
+{date:"23 Sep 2026",region:"Saurashtra & Kutch",leadDay:5,predicted:81,outcome:"incorrect"},
+{date:"22 Sep 2026",region:"Telangana",leadDay:2,predicted:45,outcome:"partial"},
+{date:"22 Sep 2026",region:"East Uttar Pradesh",leadDay:7,predicted:19,outcome:"correct"},
+{date:"21 Sep 2026",region:"Odisha",leadDay:3,predicted:63,outcome:"incorrect"},
+{date:"21 Sep 2026",region:"Marathwada",leadDay:4,predicted:52,outcome:"partial"},
+{date:"20 Sep 2026",region:"Himachal Pradesh",leadDay:8,predicted:74,outcome:"incorrect"},
+{date:"20 Sep 2026",region:"Coastal Karnataka",leadDay:1,predicted:15,outcome:"correct"},
+{date:"19 Sep 2026",region:"Assam & Meghalaya",leadDay:6,predicted:39,outcome:"correct"},
+{date:"19 Sep 2026",region:"Rayalaseema",leadDay:9,predicted:28,outcome:"correct"},
+{date:"18 Sep 2026",region:"Bihar",leadDay:2,predicted:60,outcome:"partial"},
+{date:"18 Sep 2026",region:"Sub-Himalayan West Bengal & Sikkim",leadDay:10,predicted:88,outcome:"incorrect"}
+];
+var OCLAB={correct:"Correct",incorrect:"Incorrect",partial:"Partial"};
+
+function pseudo(a,b){var x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)}
+function bustFor(seed,day){return Math.min(.97,Math.max(.02,pseudo(seed,day*3.17)*.6+pseudo(seed*2.31,day*1.11)*.4))}
+function uFor(seed,day){return pseudo(seed*3.3+1,day*.7)}
+function tierFor(b){for(var i=0;i<TIERS.length;i++){if(b<TIERS[i].max)return TIERS[i]}return TIERS[3]}
+function vioFor(u){for(var i=0;i<VIO.length;i++){if(u<VIO[i].max)return VIO[i]}return VIO[3]}
+function calc(day){return SUBS.map(function(s){var b=bustFor(s.seed,day),u=uFor(s.seed,day);return {s:s,b:b,pct:Math.round(b*100),t:tierFor(b),u:u,conf:Math.round((1-u)*100),v:vioFor(u)}})}
+function fbStats(){var t=S.fb.length,c=S.fb.filter(function(r){return r.outcome==="correct"}).length;return {total:t,pct:t?Math.round(c/t*100):0}}
+function flagged(D){return D.filter(function(d){return d.t.k==="orange"||d.t.k==="red"}).length}
+function reduced(D){return D.filter(function(d){return d.u>=.55}).length}
+
+var S={day:3,tab:"bust",sel:null,picked:false,auto:!RM,region:null,fb:FB.slice()};
+var D=calc(S.day),tiles={},timer=null,tkPaused=false;
+
+function tween(el,to,suf){
+  suf=suf||"";var from=el._v==null?0:el._v;el._v=to;
+  if(RM||from===to){el.textContent=to+suf;return}
+  var t0=performance.now(),dur=550;cancelAnimationFrame(el._r);
+  function step(n){var p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(to-from)*e)+suf;if(p<1)el._r=requestAnimationFrame(step)}
+  el._r=requestAnimationFrame(step);
+}
+
+function buildStatic(){
+  var c=$("#carto");
+  SUBS.forEach(function(s){
+    var b=document.createElement("button");b.type="button";b.className="t";
+    b.style.gridColumn=String(s.col);b.style.gridRow=String(s.row);
+    var a=document.createElement("b"),v=document.createElement("span");a.textContent=s.code;b.appendChild(a);b.appendChild(v);
+    b.addEventListener("click",function(){pick(s.id,true)});
+    c.appendChild(b);tiles[s.id]={el:b,v:v};
+  });
+  var days=$("#days");
+  for(var i=1;i<=10;i++){(function(d){var b=document.createElement("button");b.type="button";b.className="day";b.dataset.d=d;b.textContent="D"+d;b.setAttribute("aria-label","Lead day "+d);b.addEventListener("click",function(){setDay(d,true)});days.appendChild(b)})(i)}
+  var dl=$("#subs");
+  SUBS.forEach(function(s){var o=document.createElement("option");o.value=s.name;dl.appendChild(o);var o2=document.createElement("option");o2.value=s.code;dl.appendChild(o2)});
+}
+
+function paintMap(){
+  var trust=S.tab==="trust";
+  D.forEach(function(d){
+    var t=tiles[d.s.id],bg=trust?d.v.bg:d.t.bg,fg=trust?d.v.fg:d.t.fg;
+    t.el.style.backgroundColor=bg;t.el.style.color=fg;
+    t.v.textContent=(trust?d.conf:d.pct)+"%";
+    var txt=trust?("model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()):(d.pct+"% bust probability, "+d.t.lab);
+    t.el.title=d.s.name+": "+txt;
+    t.el.setAttribute("aria-label",d.s.name+", "+txt+", Day "+S.day);
+    t.el.classList.toggle("sel",S.sel===d.s.id);
+    t.el.setAttribute("aria-pressed",S.sel===d.s.id?"true":"false");
+    var dim=!!S.region&&RG.filter(function(r){return r.k===S.region})[0].ids.indexOf(d.s.id)<0;
+    t.el.classList.toggle("dim",dim);
+  });
+  $("#map-h").textContent=(trust?"Model confidence map, Day ":"Bust-risk map, Day ")+S.day;
+  $$(".day").forEach(function(b){b.setAttribute("aria-pressed",+b.dataset.d===S.day?"true":"false")});
+  $$(".tab").forEach(function(b){b.setAttribute("aria-selected",b.dataset.tab===S.tab?"true":"false")});
+  var lg=trust?VIO.map(function(v,i){var r=["Typical","Slightly reduced","Reduced","Substantially reduced"][i];return '<li><i style="background:'+v.bg+'"></i>'+r+'</li>'}):TIERS.map(function(t){return '<li><i style="background:'+t.bg+'"></i>'+t.lab+' ('+t.band+')</li>'});
+  $("#lg").innerHTML=lg.join("");
+}
+
+function paintBlocks(){
+  tween($("#b-red"),D.filter(function(d){return d.t.k==="red"}).length);
+  $("#b-red-t").textContent="subdivisions at Warning on Day "+S.day;
+  tween($("#b-vio"),reduced(D));
+  $("#b-vio-t").textContent="subdivisions with reduced model confidence on Day "+S.day;
+  var st=fbStats();
+  tween($("#b-fb"),st.total);
+  $("#b-fb-t").textContent="outcomes logged, "+st.pct+"% confirmed correct";
+}
+
+function paintTicker(){
+  var st=fbStats(),top=D.slice().sort(function(a,b){return b.b-a.b})[0];
+  var items=["Forecast cycle 00Z, 28 September 2026 loaded","Day "+S.day+": "+flagged(D)+" of 33 subdivisions at Alert or Warning","Highest bust risk on Day "+S.day+": "+top.s.name+" ("+top.pct+"%)","Model confidence reduced for "+reduced(D)+" subdivisions on Day "+S.day,st.total+" outcomes logged, "+st.pct+"% confirmed correct","Illustrative data, not connected to a live feed"];
+  var html=items.map(function(t){return "<span>"+esc(t)+"</span>"}).join('<i class="vsep">|</i>');
+  $$(".tk-c").forEach(function(e){e.innerHTML=html});
+}
+
+function byId(id){return D.filter(function(d){return d.s.id===id})[0]||D[0]}
+
+function paintSel(){
+  var d=byId(S.sel),s=d.s;
+  $("#s-name").textContent=s.name;$("#s-code").textContent="Code "+s.code;
+  tween($("#s-p"),d.pct);
+  $("#s-bl").textContent="bust probability, Day "+S.day;
+  var ch=$("#s-tier");ch.textContent=d.t.lab;ch.style.background=d.t.bg;ch.style.color=d.t.fg;
+  $("#s-band").textContent=d.t.band;
+  $("#s-conf").textContent=d.conf+"% ("+d.v.lab.toLowerCase()+")"+(d.u>=.55?", "+REASONS[s.seed%REASONS.length].toLowerCase():"");
+  $("#s-act").textContent=d.t.act;
+  var f=[0,1,2].map(function(k){
+    var name=FACTORS[(s.seed+k*3+S.day)%FACTORS.length],mag=6+Math.floor(pseudo(s.seed+k,S.day)*14);
+    var up=k===0?true:pseudo(s.seed*1.7+k,S.day*2.3)>.35;
+    return '<li>'+esc(name)+'<div class="fr"><span class="fb"><i style="width:'+Math.min(100,mag*4)+'%;background:'+(up?"#FFB4A8":"#9CC9FF")+'"></i></span><span class="fv">'+(up?"+":"-")+mag+'%</span></div></li>';
+  });
+  $("#s-fac").innerHTML=f.join("");
+  var a=ANALOGS[(s.seed+S.day)%ANALOGS.length];
+  $("#s-an").textContent=a.date+", "+a.desc+". Outcome: "+a.outcome+".";
+}
+
+function paintRank(){
+  var trust=S.tab==="trust";
+  var list=D.slice().sort(function(a,b){return trust?b.u-a.u:b.b-a.b}).slice(0,8);
+  $("#rank-h").textContent=(trust?"Lowest model confidence, Day ":"Highest bust risk, Day ")+S.day;
+  $("#rank").innerHTML=list.map(function(d,i){
+    var val=trust?d.conf:d.pct,col=trust?"#6B5CA5":d.t.bg;
+    return '<li><button type="button" class="rk'+(S.sel===d.s.id?" on":"")+'" data-id="'+d.s.id+'"><span class="rn">'+(i+1)+'</span><span class="rname">'+esc(d.s.name)+'</span><span class="rbar"><i style="width:'+val+'%;background:'+col+'"></i></span><span class="rv">'+val+'%</span></button></li>';
+  }).join("");
+  $$("#rank .rk").forEach(function(b){b.addEventListener("click",function(){pick(+b.dataset.id,true)})});
+}
+
+function paintFb(fresh){
+  $("#fb").innerHTML=S.fb.slice(0,6).map(function(r,i){
+    return '<tr'+(fresh&&i===0?' class="fresh"':'')+'><td>'+esc(r.date)+'</td><td>'+esc(r.region)+'</td><td>D'+r.leadDay+'</td><td><span class="pill '+r.outcome+'">'+OCLAB[r.outcome]+'</span></td></tr>';
+  }).join("");
+}
+
+function paintRegions(){
+  $("#regions").innerHTML=RG.map(function(r){
+    var ds=D.filter(function(d){return r.ids.indexOf(d.s.id)>=0}),fl=flagged(ds);
+    var avg=Math.round(ds.reduce(function(a,d){return a+d.pct},0)/ds.length);
+    var cnt=TIERS.map(function(t){return ds.filter(function(d){return d.t.k===t.k}).length});
+    var lab=TIERS.map(function(t,i){return t.short+" "+cnt[i]}).join(", ");
+    return '<button type="button" class="rc'+(S.region===r.k?" on":"")+'" data-r="'+r.k+'" aria-pressed="'+(S.region===r.k)+'"><span class="rc-n">'+r.name+'</span><span class="rc-m"><b>'+fl+'</b> of '+ds.length+' subdivisions at Alert or Warning</span><span class="rc-a">Average bust probability <b>'+avg+'%</b></span><span class="rc-bar" role="img" aria-label="'+lab+'">'+TIERS.map(function(t,i){return '<i style="flex:'+cnt[i]+';background:'+t.bg+'"></i>'}).join("")+'</span><span class="rc-k">'+lab+'</span></button>';
+  }).join("");
+  $$("#regions .rc").forEach(function(b){b.addEventListener("click",function(){S.region=S.region===b.dataset.r?null:b.dataset.r;paintMap();paintRegions();$("#reg-p").textContent=S.region?"Highlighting "+RG.filter(function(r){return r.k===S.region})[0].name+" on the map. Select it again to clear.":"Select a region to highlight its subdivisions on the map."})});
+}
+
+function render(fresh){
+  D=calc(S.day);
+  if(!S.picked||S.sel==null)S.sel=D.slice().sort(function(a,b){return b.b-a.b})[0].s.id;
+  paintMap();paintBlocks();paintTicker();paintSel();paintRank();paintFb(fresh);paintRegions();
+}
+function pick(id,user){S.sel=id;if(user)S.picked=true;render()}
+function setDay(d,user){if(user)stopAuto();S.day=d;render()}
+function setTab(t){S.tab=t;render()}
+
+function paintPlay(){$("#play").textContent=S.auto?"Pause":"Play auto-advance"}
+function startAuto(){stopAuto();if(RM)return;S.auto=true;timer=setInterval(function(){setDay(S.day%10+1,false)},4500);paintPlay()}
+function stopAuto(){if(timer)clearInterval(timer);timer=null;S.auto=false;paintPlay()}
+
+function wire(){
+  $$(".tab").forEach(function(b){b.addEventListener("click",function(){setTab(b.dataset.tab)})});
+  $("#play").addEventListener("click",function(){S.auto?stopAuto():startAuto()});
+  $("#tkb").addEventListener("click",function(){tkPaused=!tkPaused;$("#ticker").classList.toggle("paused",tkPaused);$("#tkb").textContent=tkPaused?"Play":"Pause"});
+  $$("[data-oc]").forEach(function(b){b.addEventListener("click",function(){
+    var d=byId(S.sel);
+    S.fb.unshift({date:"28 Sep 2026",region:d.s.name,leadDay:S.day,predicted:d.pct,outcome:b.dataset.oc});
+    render(true);
+    $("#ocmsg").textContent="Recorded: "+OCLAB[b.dataset.oc].toLowerCase()+" for "+d.s.name+", Day "+S.day+".";
+    setTimeout(function(){$("#ocmsg").textContent=""},3500);
+  })});
+  $$("[data-go]").forEach(function(a){a.addEventListener("click",function(){var g=a.dataset.go;if(g==="bust"||g==="trust")setTab(g)})});
+  $$("[data-nav]").forEach(function(a){a.addEventListener("click",function(){
+    var k=a.dataset.nav;if(k==="bust"||k==="trust")setTab(k);
+    $$(".nav [data-nav]").forEach(function(x){x.removeAttribute("aria-current")});
+    var m=$('.nav [data-nav="'+k+'"]');if(m)m.setAttribute("aria-current","page");
+  })});
+  $("#sform").addEventListener("submit",function(e){
+    e.preventDefault();var q=$("#q").value.trim().toLowerCase();if(!q)return;
+    var s=SUBS.filter(function(x){return x.name.toLowerCase()===q||x.code.toLowerCase()===q})[0]||SUBS.filter(function(x){return x.name.toLowerCase().indexOf(q)>=0||x.code.toLowerCase().indexOf(q)>=0})[0];
+    if(!s){$("#q").setCustomValidity("No subdivision matches this search");$("#q").reportValidity();return}
+    pick(s.id,true);
+    $("#map").scrollIntoView({behavior:RM?"auto":"smooth"});
+    var el=tiles[s.id].el;el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");
+  });
+  $("#q").addEventListener("input",function(){$("#q").setCustomValidity("")});
+  $$("[data-size]").forEach(function(b){b.addEventListener("click",function(){document.documentElement.style.fontSize=b.dataset.size+"%"})});
+  $("#hc").addEventListener("click",function(){var on=document.body.classList.toggle("hc");$("#hc").setAttribute("aria-pressed",on?"true":"false")});
+  var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"उच्च कंट्रास्ट",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n1:"होम",n2:"डैशबोर्ड",n3:"मॉडल विश्वसनीयता",n4:"प्रतिक्रिया लॉग",n5:"कार्यप्रणाली",n6:"डेटा स्रोत",n7:"सहायता",b1:"पूर्वानुमान विफलता चेतावनी",b2:"मॉडल विश्वसनीयता",b3:"परिणाम लॉग",b4:"कार्यप्रणाली और डेटा",tk:"बुलेटिन",tab1:"विफलता-जोखिम मानचित्र",tab2:"मॉडल विश्वसनीयता",h2:"चयनित उपखंड",h3:"क्षेत्रीय सारांश",h4:"हाल के परिणाम",h5:"विश्वास के बारे में"};
+  var EN={};$$("[data-i18n]").forEach(function(e){EN[e.dataset.i18n]=e.textContent});
+  $$("[data-lang]").forEach(function(b){b.addEventListener("click",function(){
+    var l=b.dataset.lang;
+    $$("[data-i18n]").forEach(function(e){e.textContent=(l==="hi"?HI:EN)[e.dataset.i18n]});
+    $$("[data-lang]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});
+    document.documentElement.lang=l;
+  })});
+}
+
+buildStatic();wire();render();
+if(S.auto)startAuto();else paintPlay();
+window.__vishwas={S:S,calc:calc,render:render,setDay:setDay,setTab:setTab,pick:pick};
+})();
+</script>
+</body>
+</html>
