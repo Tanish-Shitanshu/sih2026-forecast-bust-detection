@@ -149,7 +149,7 @@ main:focus{outline:none}
 .rp li{padding:3px 0 3px 16px;position:relative;font-size:.875rem}
 .rp li::before{content:"";position:absolute;left:0;top:.75em;width:8px;height:2px;background:var(--blue)}
 .rp .no li::before{background:#8E1B1B}
-.infog{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.infog{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .infol{display:block;text-decoration:none;color:var(--text)}
 .infol:hover{border-color:var(--blue)}
 .infol b{display:block;color:var(--link);margin-bottom:2px}
@@ -357,6 +357,18 @@ details p{padding:10px 14px;margin:0}
 .foot p{font-size:.875rem;margin-bottom:6px}
 .foot-b{border-top:1px solid var(--line);padding:12px 0 22px;font-size:.8125rem;color:var(--muted)}
 
+.t.dim{opacity:.22}
+.evrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
+.evrow select,.api-sel{padding:6px 8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.api-g{display:grid;grid-template-columns:340px 1fr;gap:14px;margin-top:10px;align-items:start}
+.apil{display:grid;gap:4px;align-content:start}
+.apil button{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;background:var(--panel);border:1px solid var(--line);font-size:.8125rem;word-break:break-all}
+.apil button[aria-selected="true"]{background:var(--sky);border-color:var(--blue)}
+.mth{display:inline-block;font-weight:800;font-size:.6875rem;padding:1px 6px;color:#fff;min-width:3.6em;text-align:center;flex:none}
+.mth.get{background:var(--steel)}.mth.post{background:var(--teal)}.mth.put{background:var(--blue2)}.mth.patch{background:var(--navy)}
+.json{background:#0C2340;color:#E6EEF7;padding:12px;overflow:auto;font-size:.75rem;line-height:1.5;max-height:380px;font-family:ui-monospace,Menlo,Consolas,monospace;margin:6px 0}
+.rchips{display:flex;gap:6px;flex-wrap:wrap}
+.rchips span{padding:2px 9px;font-size:.75rem;font-weight:700;color:#fff}
 /* high contrast */
 body.hc{--bg:#000;--panel:#000;--text:#fff;--muted:#fff;--line:#fff;--sky:#000;--link:#FFE600;--blue:#000;--blue2:#000;--navy:#000;--tick:#000;--sel:#FFE600;--ink:#fff;--accent:#FFE600}
 body.hc a{text-decoration:underline}
@@ -366,9 +378,10 @@ body.hc .sel-card,body.hc .stat,body.hc .acct,body.hc .blk,body.hc .facts,body.h
 body.hc .logo{background:#fff;color:#000}
 body.hc .oc button,body.hc .toast{border-color:#fff;background:#000;color:#fff}
 body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
+body.hc .json{background:#000;color:#fff;border:2px solid #fff}
 
 @media (max-width:1020px){
-  .grid3,.grid2,.hero,.charts,.login-g,.two-eq,.two,.rtabs{grid-template-columns:1fr}
+  .grid3,.grid2,.hero,.charts,.login-g,.two-eq,.two,.rtabs,.api-g{grid-template-columns:1fr}
   .blocks,.stats,.facts-g{grid-template-columns:repeat(2,1fr)}
   .rsum,.infog,.srcs{grid-template-columns:repeat(2,1fr)}
   .foot-g{grid-template-columns:repeat(2,1fr)}
@@ -456,7 +469,7 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
     <div>
       <h1 class="hx">Vishwas</h1>
       <p class="hs">Forecast Trust Console</p>
-      <p class="hp">Vishwas estimates how likely an already-issued NCMRWF and IMD medium-range forecast is to bust, for each of 33 meteorological subdivisions and each lead day from Day 1 to Day 10, before the outcome is known. It does not forecast the weather.</p>
+      <p class="hp">Vishwas estimates how likely an already-issued NCMRWF and IMD medium-range forecast is to bust, and how much confidence to place in it, for each of 33 meteorological subdivisions and each lead day from Day 1 to Day 10, before the outcome is known. It does not forecast the weather.</p>
       <p class="hrot">Flags forecast busts during <span id="rot">monsoon depressions</span></p>
       <div class="acts" id="hero-cta"></div>
       <p class="hnote">For NCMRWF duty forecasters, senior forecasters, administrators and observers. This prototype shows illustrative data and is not connected to a live feed.</p>
@@ -513,6 +526,7 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
     <div class="infog">
       <a class="panel infol" href="#/methodology"><b>Methodology</b>What Vishwas does and does not do, with two interactive tools.</a>
       <a class="panel infol" href="#/sources"><b>Data sources</b>The three archives Vishwas learns from, and how they combine.</a>
+      <a class="panel infol" href="#/api"><b>API</b>The interface a backend provides: endpoints, allowed roles and sample responses.</a>
       <a class="panel infol" href="#/help"><b>Help and glossary</b>Accessibility, roles and permissions, and the meaning of each term.</a>
     </div>
   </div>
@@ -565,9 +579,12 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
     <div class="dayrow"><span class="dl">Lead day</span><div class="days" data-days role="group" aria-label="Lead day"></div></div>
     <div class="grid3">
       <div class="panel">
+        <div class="tabs" role="tablist" aria-label="Map type" id="dm-tabs" style="margin:0 0 10px"></div>
         <div class="mh"><h2 class="mt" id="dm-h">Bust-risk map, Day 3</h2><button type="button" class="play playbtn" id="dplay">Pause</button></div>
+        <div class="evrow"><label class="dl" for="ev-f">Weather event</label><select id="ev-f"></select><span class="note" id="ev-n" style="margin:0"></span></div>
         <div class="carto" id="carto-dash"></div>
         <ul class="lg" id="lg-dash"></ul>
+        <p class="note" id="dm-expl"></p>
         <p class="note">Illustrative data, not connected to a live feed.</p>
       </div>
       <aside class="panel sel-card" aria-label="Selected subdivision">
@@ -578,6 +595,8 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
         <span class="chip" id="s-tier"></span>
         <dl class="sdl">
           <dt>Probability band</dt><dd id="s-band"></dd>
+          <dt>Forecast confidence</dt><dd id="s-fc"></dd>
+          <dt>Weather event</dt><dd id="s-ev"></dd>
           <dt>Model self-confidence</dt><dd id="s-conf"></dd>
           <dt>Recommended action</dt><dd id="s-act"></dd>
         </dl>
@@ -616,7 +635,7 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
     <div class="panel" style="border-top:0">
       <div class="rsum" id="rg-sum"></div>
       <div class="tblwrap"><table class="tbl">
-        <thead><tr><th>Subdivision</th><th>Bust probability</th><th>Warning level</th><th>Model self-confidence</th><th>Recommended action</th></tr></thead>
+        <thead><tr><th>Subdivision</th><th>Bust probability</th><th>Forecast confidence</th><th>Warning level</th><th>Weather event</th><th>Model self-confidence</th><th>Recommended action</th></tr></thead>
         <tbody id="rg-body"></tbody>
       </table></div>
     </div>
@@ -750,6 +769,8 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
     <details open><summary>What Vishwas does</summary><p>It looks at an already-issued NCMRWF and IMD forecast for Day 1 to Day 10 and estimates how likely that forecast is to bust, meaning a large deviation between the forecast and what actually happens, before the outcome is known. It flags which subdivisions and lead days deserve extra caution, so a duty forecaster can weigh the official guidance with calibrated confidence.</p></details>
     <details><summary>What it does not do</summary><p>It does not forecast the weather itself, and it does not replace or override IMD or NCMRWF guidance. It does not issue public warnings, and it is not a substitute for the duty forecaster's judgment. It is a second opinion on how much to trust the first one.</p></details>
     <details><summary>Model self-confidence</summary><p>Reported separately, on a violet scale that never uses the warning colors. It reflects how much historical precedent exists for the current pattern, not how severe the weather is expected to be.</p></details>
+    <details><summary>Forecast confidence</summary><p>Forecast confidence is 100% minus the bust probability. It answers a simple question: how far can the issued forecast be trusted for this subdivision and lead day? A subdivision at 12% forecast confidence is at Red, warning. It is different from model self-confidence, which measures how much precedent the model has for the pattern.</p></details>
+    <details><summary>Weather events</summary><p>Flagged subdivisions (Yellow and above) are tagged with the event most likely to cause the bust, using the event types named in the problem statement: monsoon depressions, heavy rainfall events, western disturbances, cyclones, heat waves, and break or active monsoon phases. In this prototype the tags are illustrative.</p></details>
     <details><summary>Prototype status</summary><p>The figures in this prototype are illustrative. A fixed formula generates them so that they stay consistent from screen to screen. The working system replaces them with model output trained on the data sources listed under Data sources. Nothing here is connected to a live feed.</p></details>
 
     <h2>How a bust-risk estimate is built</h2>
@@ -804,6 +825,20 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
   </div>
 </section>
 
+<!-- API -->
+<section id="v-api" data-view="api" hidden>
+  <div class="wrap doc wide">
+    <h1 class="vt" data-i18n="vt_api">API</h1>
+    <p class="lead">The interface a backend will provide. Select an endpoint to see who may call it, what it takes, and a sample response built from this prototype's illustrative data. Requests carry a token issued at sign-in, and the role in the token decides access.</p>
+    <div class="dayrow"><label class="dl" for="api-day">Sample lead day</label><select id="api-day" class="api-sel"></select></div>
+    <div class="api-g">
+      <div class="apil" id="api-list" role="tablist" aria-label="Endpoints"></div>
+      <div class="panel" id="api-detail"></div>
+    </div>
+    <p class="note">Planned interface. This prototype does not call these endpoints. The responses shown are generated in the browser from illustrative data.</p>
+  </div>
+</section>
+
 <!-- HELP -->
 <section id="v-help" data-view="help" hidden>
   <div class="wrap doc">
@@ -828,6 +863,8 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
       <dt>Lead day</dt><dd>How many days ahead the forecast is for, from Day 1 to Day 10.</dd>
       <dt>Subdivision</dt><dd>One of the 33 meteorological subdivisions Vishwas monitors.</dd>
       <dt>Warning level</dt><dd>Green (no warning), Yellow (watch), Orange (alert) or Red (warning), following the IMD colour code.</dd>
+      <dt>Forecast confidence</dt><dd>100% minus the bust probability. How far the issued forecast can be trusted for a subdivision and lead day.</dd>
+      <dt>Weather event</dt><dd>The type of event most likely to cause a bust in a flagged subdivision, such as a cyclone or a heat wave.</dd>
       <dt>Model self-confidence</dt><dd>How much historical precedent the model has for the current pattern. It is separate from bust risk.</dd>
       <dt>Historical analog</dt><dd>A past event with a similar forecast pattern, shown with how its forecast verified.</dd>
       <dt>Outcome</dt><dd>What a forecaster recorded after the fact: correct, incorrect or partial.</dd>
@@ -854,6 +891,7 @@ body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
       <ul>
         <li><a href="#/methodology">Methodology</a></li>
         <li><a href="#/sources">Data sources</a></li>
+        <li><a href="#/api">API</a></li>
         <li><a href="#/help">Help and glossary</a></li>
         <li><a href="#/login">Sign in</a></li>
       </ul>
@@ -934,10 +972,10 @@ var ANALOGS=[
 ];
 var REASONS=["Sparse historical analog data","Pattern outside training climatology","Low ensemble agreement among NWP members","Recent sensor or station gaps in this subdivision","Rare synoptic configuration for this lead time"];
 var TIERS=[
-{k:"green",lab:"Green, no warning",short:"No warning",max:.18,band:"0% to 18%",bg:"#1E7A3C",fg:"#FFFFFF",act:"No action needed. The forecast is reliable at this lead time."},
-{k:"yellow",lab:"Yellow, watch",short:"Watch",max:.38,band:"18% to 38%",bg:"#F2B300",fg:"#14181C",act:"Cross-check the short-range nowcast before briefing."},
-{k:"orange",lab:"Orange, alert",short:"Alert",max:.62,band:"38% to 62%",bg:"#E8720C",fg:"#14181C",act:"Escalate to the duty forecaster for manual review."},
-{k:"red",lab:"Red, warning",short:"Warning",max:1.01,band:"62% to 100%",bg:"#C62828",fg:"#FFFFFF",act:"Escalate immediately. Treat the forecast with strong caution."}
+{k:"green",lab:"Green, no warning",short:"No warning",max:.18,band:"0% to 18%",bg:"#1E7A3C",fg:"#FFFFFF",band2:"82% to 100%",word:"high",act:"No action needed. The forecast is reliable at this lead time."},
+{k:"yellow",lab:"Yellow, watch",short:"Watch",max:.38,band:"18% to 38%",bg:"#F2B300",fg:"#14181C",band2:"62% to 82%",word:"moderate",act:"Cross-check the short-range nowcast before briefing."},
+{k:"orange",lab:"Orange, alert",short:"Alert",max:.62,band:"38% to 62%",bg:"#E8720C",fg:"#14181C",band2:"38% to 62%",word:"low",act:"Escalate to the duty forecaster for manual review."},
+{k:"red",lab:"Red, warning",short:"Warning",max:1.01,band:"62% to 100%",bg:"#C62828",fg:"#FFFFFF",band2:"0% to 38%",word:"very low",act:"Escalate immediately. Treat the forecast with strong caution."}
 ];
 var VIO=[{max:.35,bg:"#F3F0FA",fg:"#14181C",lab:"Typical"},{max:.55,bg:"#D8CFEF",fg:"#14181C",lab:"Slightly reduced"},{max:.72,bg:"#A692D1",fg:"#14181C",lab:"Reduced"},{max:9,bg:"#6B5CA5",fg:"#FFFFFF",lab:"Substantially reduced"}];
 var RG=[
@@ -1010,15 +1048,15 @@ var ROUTES={
   home:{t:"Home"},login:{t:"Sign in"},
   overview:{t:"Workspace",p:1},dashboard:{t:"Dashboard",p:1},regions:{t:"Regional summary",p:1},"model-trust":{t:"Model Trust",p:1},feedback:{t:"Feedback log",p:1},
   admin:{t:"Administration",p:1,role:"admin"},
-  methodology:{t:"Methodology"},sources:{t:"Data sources"},help:{t:"Help"}
+  methodology:{t:"Methodology"},sources:{t:"Data sources"},api:{t:"API"},help:{t:"Help"}
 };
 var VIEWS=Object.keys(ROUTES);
-var NAVKEY={home:"n_home",overview:"n_over",dashboard:"n_dash",regions:"n_reg","model-trust":"n_trust",feedback:"n_fb",admin:"n_admin",methodology:"n_meth",sources:"n_src",help:"n_help"};
+var NAVKEY={home:"n_home",overview:"n_over",dashboard:"n_dash",regions:"n_reg","model-trust":"n_trust",feedback:"n_fb",admin:"n_admin",methodology:"n_meth",sources:"n_src",api:"n_api",help:"n_help"};
 var NAVSETS={
- duty:["overview","dashboard","regions","model-trust","feedback","methodology","sources","help"],
- senior:["overview","feedback","dashboard","regions","model-trust","methodology","sources","help"],
- admin:["overview","admin","dashboard","model-trust","regions","feedback","methodology","sources","help"],
- observer:["overview","dashboard","regions","model-trust","feedback","methodology","sources","help"]
+ duty:["overview","dashboard","regions","model-trust","feedback","methodology","sources","api","help"],
+ senior:["overview","feedback","dashboard","regions","model-trust","methodology","sources","api","help"],
+ admin:["overview","admin","dashboard","model-trust","regions","feedback","methodology","sources","api","help"],
+ observer:["overview","dashboard","regions","model-trust","feedback","methodology","sources","api","help"]
 };
 var CHECKS=["Review every Red subdivision for Day 1 to Day 3","Cross-check Yellow subdivisions against the short-range nowcast","Check Model Trust for subdivisions with reduced confidence","Record outcomes for yesterday's flagged forecasts","Write handover notes for the next shift"];
 var PIPE=[
@@ -1042,8 +1080,28 @@ var SRC=[
  {n:"NCMRWF NWP archives",d:"Archived numerical weather prediction runs from NCMRWF, the record of what was predicted.",u:"The forecast half of every forecast and observation pair, which builds the historical bust record."}
 ];
 var STAGES=["Preparing data","Training the model","Calibrating probabilities","Validating on held-out years"];
-var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"उच्च कंट्रास्ट",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n_home:"होम",n_over:"कार्यक्षेत्र",n_dash:"डैशबोर्ड",n_reg:"क्षेत्र",n_trust:"मॉडल विश्वसनीयता",n_fb:"प्रतिक्रिया लॉग",n_admin:"प्रशासन",n_meth:"कार्यप्रणाली",n_src:"डेटा स्रोत",n_help:"सहायता",ws_duty:"शिफ्ट डेस्क",ws_senior:"समीक्षा डेस्क",ws_admin:"नियंत्रण कक्ष",ws_observer:"ब्रीफिंग",tk:"बुलेटिन",si:"साइन इन",so:"साइन आउट",vt_login:"साइन इन",vt_dash:"डैशबोर्ड",vt_reg:"क्षेत्रीय सारांश",vt_trust:"मॉडल विश्वसनीयता",vt_fb:"प्रतिक्रिया लॉग",vt_admin:"प्रशासन",vt_meth:"कार्यप्रणाली",vt_src:"डेटा स्रोत",vt_help:"सहायता"};
-var EN={si:"Sign in",so:"Sign out",n_home:"Home",n_over:"Workspace",n_dash:"Dashboard",n_reg:"Regions",n_trust:"Model Trust",n_fb:"Feedback Log",n_admin:"Administration",n_meth:"Methodology",n_src:"Data sources",n_help:"Help",ws_duty:"Shift desk",ws_senior:"Review desk",ws_admin:"Control room",ws_observer:"Briefing"};
+var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"उच्च कंट्रास्ट",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n_home:"होम",n_over:"कार्यक्षेत्र",n_dash:"डैशबोर्ड",n_reg:"क्षेत्र",n_trust:"मॉडल विश्वसनीयता",n_fb:"प्रतिक्रिया लॉग",n_admin:"प्रशासन",n_meth:"कार्यप्रणाली",n_src:"डेटा स्रोत",n_api:"एपीआई",n_help:"सहायता",ws_duty:"शिफ्ट डेस्क",ws_senior:"समीक्षा डेस्क",ws_admin:"नियंत्रण कक्ष",ws_observer:"ब्रीफिंग",tk:"बुलेटिन",si:"साइन इन",so:"साइन आउट",vt_login:"साइन इन",vt_dash:"डैशबोर्ड",vt_reg:"क्षेत्रीय सारांश",vt_trust:"मॉडल विश्वसनीयता",vt_fb:"प्रतिक्रिया लॉग",vt_admin:"प्रशासन",vt_meth:"कार्यप्रणाली",vt_src:"डेटा स्रोत",vt_api:"एपीआई",vt_help:"सहायता"};
+var EN={si:"Sign in",so:"Sign out",n_home:"Home",n_over:"Workspace",n_dash:"Dashboard",n_reg:"Regions",n_trust:"Model Trust",n_fb:"Feedback Log",n_admin:"Administration",n_meth:"Methodology",n_src:"Data sources",n_api:"API",n_help:"Help",ws_duty:"Shift desk",ws_senior:"Review desk",ws_admin:"Control room",ws_observer:"Briefing"};
+
+var EVENTS=["monsoon depression","heavy rainfall event","western disturbance","cyclone","heat wave","break or active monsoon phase"];
+function setOf(a){var o={};a.forEach(function(k){o[k]=1});return o}
+var EV_COAST=setOf(["SAU/KCH","GJ","KNK/GA","CST.KA","KL","TN/PY","CST.AP","OD","GWB"]);
+var EV_NW=setOf(["J&K","HP","PB","HR/DL","W.RJ","E.RJ","W.UP","E.UP"]);
+var EV_HEAT=setOf(["PB","HR/DL","W.RJ","E.RJ","W.UP","E.UP","W.MP","E.MP","VID","MWD","TG","RYL","BR","JH","CG","NI.KA","MDH.MH"]);
+var EV_HEAVY=setOf(["KNK/GA","CST.KA","KL","ASM","NE.HL","AR","SIK/NWB","HP","J&K","MDH.MH"]);
+var EV_NODEP=setOf(["J&K","HP","PB","HR/DL","W.RJ"]);
+function eventCands(s){
+  var c=[];
+  if(EV_NW[s.code])c.push("western disturbance");
+  if(EV_HEAT[s.code])c.push("heat wave");
+  if(EV_COAST[s.code])c.push("cyclone");
+  if(!EV_NODEP[s.code])c.push("monsoon depression");
+  if(EV_HEAVY[s.code])c.push("heavy rainfall event");
+  c.push("break or active monsoon phase");
+  return c;
+}
+function eventFor(s,day,t){if(t.k==="green")return null;var c=eventCands(s);return c[Math.floor(pseudo(s.seed*1.7+3,day*2.9)*c.length)%c.length]}
+function factorsFor(s,day){return [0,1,2].map(function(k){return {name:FACTORS[(s.seed+k*3+day)%FACTORS.length],mag:6+Math.floor(pseudo(s.seed+k,day)*14),up:k===0?true:pseudo(s.seed*1.7+k,day*2.3)>.35}})}
 
 /* ---------- model ---------- */
 var CACHE={};
@@ -1054,7 +1112,7 @@ function tierFor(b){for(var i=0;i<TIERS.length;i++){if(b<TIERS[i].max)return TIE
 function vioFor(u){for(var i=0;i<VIO.length;i++){if(u<VIO[i].max)return VIO[i]}return VIO[3]}
 function calc(day){
   if(CACHE[day])return CACHE[day];
-  return (CACHE[day]=SUBS.map(function(s){var b=bustFor(s.seed,day),u=uFor(s.seed,day);return {s:s,b:b,pct:Math.round(b*100),t:tierFor(b),u:u,conf:Math.round((1-u)*100),v:vioFor(u)}}));
+  return (CACHE[day]=SUBS.map(function(s){var b=bustFor(s.seed,day),u=uFor(s.seed,day),t=tierFor(b),pc=Math.round(b*100);return {s:s,b:b,pct:pc,fc:100-pc,t:t,u:u,conf:Math.round((1-u)*100),v:vioFor(u),ev:eventFor(s,day,t)}}));
 }
 function topOf(D){return D.slice().sort(function(a,b){return b.b-a.b})[0]}
 function byId(D,id){return D.filter(function(d){return d.s.id===id})[0]||D[0]}
@@ -1062,7 +1120,7 @@ function flagged(D){return D.filter(function(d){return d.t.k==="orange"||d.t.k==
 function reduced(D){return D.filter(function(d){return d.u>=.55}).length}
 
 /* ---------- state ---------- */
-var S={route:"home",landDay:3,landPaused:false,landStep:0,landStepUser:false,landRole:0,landRoleUser:false,rot:0,
+var S={route:"home",mapMode:"bust",evF:"all",api:0,landDay:3,landPaused:false,landStep:0,landStepUser:false,landRole:0,landRoleUser:false,rot:0,
   day:3,sel:null,picked:false,touched:false,auto:false,region:"nw",trSel:null,
   fbOutcome:"all",fbStatus:"all",fbMine:false,fbQuery:"",fbSort:{k:null,dir:1},
   fb:FB0.map(function(r,i){var x={};for(var k in r)x[k]=r[k];x.id=i+1;x.status="approved";x.note="";return x}),nextFb:17,
@@ -1098,6 +1156,7 @@ function countBlocks(root){
   });
 }
 function legendHtml(mode){
+  if(mode==="conf")return TIERS.map(function(x){return '<li><i style="background:'+x.bg+'"></i>'+x.word.charAt(0).toUpperCase()+x.word.slice(1)+' forecast confidence ('+x.band2+')</li>'}).join("");
   return (mode==="trust"?VIO.map(function(v){return '<li><i style="background:'+v.bg+'"></i>'+v.lab+'</li>'}):TIERS.map(function(x){return '<li><i style="background:'+x.bg+'"></i>'+x.lab+' ('+x.band+')</li>'})).join("");
 }
 function makeMap(el,interactive,onPick,onHover){
@@ -1116,20 +1175,21 @@ function makeMap(el,interactive,onPick,onHover){
     el.appendChild(b);tl[s.id]={el:b,v:v};
   });
   return {
-    paint:function(D,mode,selId){
-      var trust=mode==="trust";
+    paint:function(D,mode,selId,dimFn){
+      var trust=mode==="trust",conf=mode==="conf";
       D.forEach(function(d){
         var x=tl[d.s.id];
         x.el.style.backgroundColor=trust?d.v.bg:d.t.bg;
         x.el.style.color=trust?d.v.fg:d.t.fg;
-        x.v.textContent=(trust?d.conf:d.pct)+"%";
+        x.v.textContent=(trust?d.conf:conf?d.fc:d.pct)+"%";
         if(interactive){
-          var txt=trust?("model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()):(d.pct+"% bust probability, "+d.t.lab);
+          var txt=trust?("model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()):conf?("forecast confidence "+d.fc+"%, "+d.t.word+" ("+d.t.lab+")"):(d.pct+"% bust probability, "+d.t.lab);
           x.el.title=d.s.name+": "+txt;
           x.el.setAttribute("aria-label",d.s.name+", "+txt);
           x.el.classList.toggle("sel",selId===d.s.id);
           x.el.setAttribute("aria-pressed",selId===d.s.id?"true":"false");
         }
+        x.el.classList.toggle("dim",!!(dimFn&&dimFn(d)));
       });
     },
     hl:function(id,on){tl[id].el.classList.toggle("hl",!!on)},
@@ -1149,7 +1209,7 @@ function navLabel(r){
   return l;
 }
 function paintNav(){
-  var list=S.user?NAVSETS[S.user.role]:["home","methodology","sources","help"];
+  var list=S.user?NAVSETS[S.user.role]:["home","methodology","sources","api","help"];
   $("#navl").innerHTML=list.map(function(r){return '<li><a href="#/'+r+'" data-r="'+r+'"'+(S.route===r?' aria-current="page"':'')+'>'+esc(navLabel(r))+'</a></li>'}).join("");
 }
 function paintRoleBar(){
@@ -1215,6 +1275,7 @@ function renderView(r){
   else if(r==="admin")paintAdmin();
   else if(r==="methodology")paintMeth();
   else if(r==="sources")paintSources();
+  else if(r==="api")paintApi();
 }
 
 /* ---------- landing (public, dynamic) ---------- */
@@ -1230,7 +1291,7 @@ function countUp(){
 }
 function landReadout(id){
   var D=calc(S.landDay);
-  if(id!=null){var d=byId(D,id);$("#hm-read").textContent=d.s.name+": "+d.pct+"% sample bust probability, "+d.t.lab+"."}
+  if(id!=null){var d=byId(D,id);$("#hm-read").textContent=d.s.name+": "+d.pct+"% sample bust probability ("+d.fc+"% forecast confidence), "+d.t.lab+"."}
   else{var top=topOf(D);$("#hm-read").textContent="Highest sample risk on Day "+S.landDay+": "+top.s.name+", "+top.pct+"%. Hover a tile to read its sample value."}
 }
 function paintLanding(){
@@ -1401,7 +1462,7 @@ function ovObserver(D){
     blk("b-blu","Approved outcomes","o-fb",st.total,st.cp+"% confirmed correct","#/feedback","Open the feedback log"),
     blk("b-teal","Data sources","o-src",3,"ERA5, IMD Gridded Rainfall, NCMRWF NWP archives","#/sources","Read about the data")
   ]);
-  h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Situation summary, Day '+S.day+'</h2><p style="margin-bottom:8px">'+fl+' of 33 subdivisions are at Alert or Warning: '+red+' at Warning and '+orange+' at Alert.</p><p style="margin-bottom:8px">The highest bust risk is in '+esc(top.s.name)+', at '+top.pct+'% ('+top.t.lab.toLowerCase()+').</p><p style="margin-bottom:8px">Model confidence is reduced for '+reduced(D)+' subdivisions. The lowest is '+esc(low.s.name)+', at '+low.conf+'%.</p><p>'+esc(worst.r.name)+' has the largest share of flagged subdivisions: '+worst.f+' of '+worst.n+'.</p></div><div class="panel"><h2 class="ph">By region</h2><div class="stack">'+regs.map(function(x){var c=TIERS.map(function(t2){return x.ds.filter(function(d){return d.t.k===t2.k}).length});return '<div><b>'+esc(x.r.name)+'</b>: '+x.f+' of '+x.n+' at Alert or Warning<div class="tbar" role="img" aria-label="'+TIERS.map(function(t2,i){return t2.short+" "+c[i]}).join(", ")+'" style="margin-top:4px">'+TIERS.map(function(t2,i){return '<i style="flex:'+c[i]+';background:'+t2.bg+'"></i>'}).join("")+'</div></div>'}).join("")+'</div></div></div>';
+  h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Situation summary, Day '+S.day+'</h2><p style="margin-bottom:8px">'+fl+' of 33 subdivisions are at Alert or Warning: '+red+' at Warning and '+orange+' at Alert.</p><p style="margin-bottom:8px">The highest bust risk is in '+esc(top.s.name)+', at '+top.pct+'% ('+top.t.lab.toLowerCase()+')'+(top.ev?', linked to a '+esc(top.ev):'')+'.</p><p style="margin-bottom:8px">Model confidence is reduced for '+reduced(D)+' subdivisions. The lowest is '+esc(low.s.name)+', at '+low.conf+'%.</p><p>'+esc(worst.r.name)+' has the largest share of flagged subdivisions: '+worst.f+' of '+worst.n+'.</p></div><div class="panel"><h2 class="ph">By region</h2><div class="stack">'+regs.map(function(x){var c=TIERS.map(function(t2){return x.ds.filter(function(d){return d.t.k===t2.k}).length});return '<div><b>'+esc(x.r.name)+'</b>: '+x.f+' of '+x.n+' at Alert or Warning<div class="tbar" role="img" aria-label="'+TIERS.map(function(t2,i){return t2.short+" "+c[i]}).join(", ")+'" style="margin-top:4px">'+TIERS.map(function(t2,i){return '<i style="flex:'+c[i]+';background:'+t2.bg+'"></i>'}).join("")+'</div></div>'}).join("")+'</div></div></div>';
   h+='<p class="rolenote" style="margin-top:20px">This account is view only. To record or review outcomes, ask an administrator for a different role.</p>';
   return h;
 }
@@ -1422,9 +1483,14 @@ function paintOverview(){
 function paintDash(){
   var D=calc(S.day);
   if(!S.picked||S.sel==null)S.sel=topOf(D).s.id;
-  mapDash.paint(D,"bust",S.sel);
-  $("#dm-h").textContent="Bust-risk map, Day "+S.day;
-  $("#lg-dash").innerHTML=legendHtml("bust");
+  var conf=S.mapMode==="conf";
+  mapDash.paint(D,S.mapMode,S.sel,function(d){return S.evF!=="all"&&d.ev!==S.evF});
+  $("#dm-h").textContent=(conf?"Forecast confidence map, Day ":"Bust-risk map, Day ")+S.day;
+  $("#lg-dash").innerHTML=legendHtml(conf?"conf":"bust");
+  $("#dm-expl").textContent=conf?"Forecast confidence is 100% minus the bust probability. It shows how far to trust the issued forecast. It is separate from model self-confidence.":"Bust probability is the chance that the issued forecast will be badly wrong.";
+  paintDmTabs();
+  $("#ev-f").value=S.evF;
+  $("#ev-n").textContent=S.evF==="all"?"Yellow, Orange and Red subdivisions are tagged with their likely event. Tags are illustrative.":D.filter(function(x){return x.ev===S.evF}).length+" subdivisions flagged for "+S.evF+" on Day "+S.day+". Other tiles are dimmed.";
   paintDays();
   var d=byId(D,S.sel),s=d.s;
   $("#s-name").textContent=s.name;$("#s-code").textContent="Code "+s.code;
@@ -1432,6 +1498,8 @@ function paintDash(){
   $("#s-bl").textContent="bust probability, Day "+S.day;
   var ch=$("#s-tier");ch.textContent=d.t.lab;ch.style.background=d.t.bg;ch.style.color=d.t.fg;
   $("#s-band").textContent=d.t.band;
+  $("#s-fc").textContent=d.fc+"% ("+d.t.word+")";
+  $("#s-ev").textContent=d.ev?d.ev:"None expected";
   $("#s-conf").textContent=d.conf+"% ("+d.v.lab.toLowerCase()+")"+(d.u>=.55?", "+REASONS[s.seed%REASONS.length].toLowerCase():"");
   $("#s-act").textContent=d.t.act;
   $("#s-fac").innerHTML=[0,1,2].map(function(k){
@@ -1459,6 +1527,10 @@ function paintDash(){
   }
   $("#s-hint").textContent=hint;
   if(S.flash){mapDash.flash(S.flash);S.flash=null}
+}
+function paintDmTabs(){
+  $("#dm-tabs").innerHTML=[["bust","Bust-risk map"],["conf","Forecast confidence map"]].map(function(x){return '<button type="button" role="tab" class="tab" data-mode="'+x[0]+'" aria-selected="'+(S.mapMode===x[0])+'">'+x[1]+'</button>'}).join("");
+  $$("#dm-tabs .tab").forEach(function(b){b.addEventListener("click",function(){touch();S.mapMode=b.dataset.mode;paintDash()})});
 }
 function paintOutcomeButtons(){
   var ok=can("record");
@@ -1496,9 +1568,9 @@ function paintRegions(){
   var fl=flagged(ds),avg=Math.round(ds.reduce(function(a,d){return a+d.pct},0)/ds.length);
   var cnt=TIERS.map(function(x){return ds.filter(function(d){return d.t.k===x.k}).length});
   var lab=TIERS.map(function(x,i){return x.short+" "+cnt[i]}).join(", ");
-  $("#rg-sum").innerHTML='<div class="stat"><b>'+fl+' of '+ds.length+'</b><span>subdivisions at Alert or Warning on Day '+S.day+'</span></div><div class="stat"><b>'+avg+'%</b><span>average bust probability</span></div><div class="stat"><div class="tbar" role="img" aria-label="'+lab+'">'+TIERS.map(function(x,i){return '<i style="flex:'+cnt[i]+';background:'+x.bg+'"></i>'}).join("")+'</div><span>'+lab+'</span></div>';
+  $("#rg-sum").innerHTML='<div class="stat"><b>'+fl+' of '+ds.length+'</b><span>subdivisions at Alert or Warning on Day '+S.day+'</span></div><div class="stat"><b>'+avg+'%</b><span>average bust probability, so '+(100-avg)+'% average forecast confidence</span></div><div class="stat"><div class="tbar" role="img" aria-label="'+lab+'">'+TIERS.map(function(x,i){return '<i style="flex:'+cnt[i]+';background:'+x.bg+'"></i>'}).join("")+'</div><span>'+lab+'</span></div>';
   $("#rg-body").innerHTML=ds.map(function(d){
-    return '<tr><td><button type="button" class="lnkb" data-id="'+d.s.id+'">'+esc(d.s.name)+'</button></td><td class="n"><span class="mini"><i style="width:'+d.pct+'%;background:'+d.t.bg+'"></i></span>'+d.pct+'%</td><td><span class="chip" style="background:'+d.t.bg+';color:'+d.t.fg+'">'+d.t.lab+'</span></td><td class="n">'+d.conf+'% ('+d.v.lab.toLowerCase()+')</td><td>'+d.t.act+'</td></tr>';
+    return '<tr><td><button type="button" class="lnkb" data-id="'+d.s.id+'">'+esc(d.s.name)+'</button></td><td class="n"><span class="mini"><i style="width:'+d.pct+'%;background:'+d.t.bg+'"></i></span>'+d.pct+'%</td><td class="n">'+d.fc+'% ('+d.t.word+')</td><td><span class="chip" style="background:'+d.t.bg+';color:'+d.t.fg+'">'+d.t.lab+'</span></td><td>'+(d.ev?esc(d.ev):"None expected")+'</td><td class="n">'+d.conf+'% ('+d.v.lab.toLowerCase()+')</td><td>'+d.t.act+'</td></tr>';
   }).join("");
   $$("#rg-body .lnkb").forEach(function(b){b.addEventListener("click",function(){S.sel=+b.dataset.id;S.picked=true;S.touched=true;nav("dashboard")})});
 }
@@ -1710,6 +1782,36 @@ function paintSources(){
   paintLabel();
 }
 
+/* ---------- API page ---------- */
+var API=[
+{m:"GET",p:"/api/v1/confidence-map",d:"Bust probability and forecast confidence for every subdivision on one lead day.",roles:ROLE_KEYS,status:200,params:[["cycle","Forecast cycle, for example 2026-09-28T00Z"],["lead_day","1 to 10"]],res:function(day){var D=calc(day);return {cycle:"2026-09-28T00Z",lead_day:day,count:33,items:D.slice(0,3).map(function(x){return {code:x.s.code,name:x.s.name,bust_probability:x.pct/100,forecast_confidence:x.fc/100,level:x.t.k,weather_event:x.ev}}),truncated:"3 of 33 items shown"}}},
+{m:"GET",p:"/api/v1/bust-probability",d:"Bust probability, warning level and recommended action for one subdivision and lead day.",roles:ROLE_KEYS,status:200,params:[["subdivision","Subdivision code, for example W.UP"],["lead_day","1 to 10"]],res:function(day){var x=topOf(calc(day));return {subdivision:x.s.code,lead_day:day,bust_probability:x.pct/100,forecast_confidence:x.fc/100,level:x.t.k,band:x.t.band,weather_event:x.ev,recommended_action:x.t.act,model_self_confidence:x.conf/100}}},
+{m:"GET",p:"/api/v1/subdivisions/{code}/explain",d:"Top contributing factors and the closest historical case for a subdivision and lead day.",roles:ROLE_KEYS,status:200,params:[["code","Subdivision code in the path"],["lead_day","1 to 10"]],res:function(day){var s=topOf(calc(day)).s,a=ANALOGS[(s.seed+day)%ANALOGS.length];return {subdivision:s.code,lead_day:day,factors:factorsFor(s,day).map(function(f){return {feature:f.name,contribution_percent:f.mag,direction:f.up?"raises":"lowers"}}),closest_analog:{date:a.date,description:a.desc,outcome:a.outcome}}}},
+{m:"GET",p:"/api/v1/model-trust",d:"Model self-confidence and the main reason, for the least confident subdivisions on one lead day.",roles:ROLE_KEYS,status:200,params:[["lead_day","1 to 10"]],res:function(day){return {lead_day:day,items:calc(day).slice().sort(function(a,b){return b.u-a.u}).slice(0,3).map(function(x){return {code:x.s.code,model_self_confidence:x.conf/100,level:x.v.lab.toLowerCase(),reason:REASONS[x.s.seed%REASONS.length]}})}}},
+{m:"GET",p:"/api/v1/outcomes",d:"Feedback log entries, filtered by status or subdivision.",roles:ROLE_KEYS,status:200,params:[["status","pending, approved or rejected"],["subdivision","Subdivision code"]],res:function(){return {count:S.fb.length,items:S.fb.slice(0,3).map(function(r){return {id:r.id,subdivision:r.region,lead_day:r.leadDay,predicted_bust_probability:r.predicted/100,outcome:r.outcome,submitted_by:r.by,status:r.status}})}}},
+{m:"POST",p:"/api/v1/outcomes",d:"Record what actually happened against a flagged prediction. The entry starts as pending.",roles:["duty","senior"],status:201,params:[["subdivision","Subdivision code"],["lead_day","1 to 10"],["outcome","correct, incorrect or partial"],["note","Optional text, up to 80 characters"]],req:{subdivision:"W.UP",lead_day:3,outcome:"incorrect",note:"Heavy spell arrived a day late"},res:function(){var x=byId(calc(3),7);return {id:17,subdivision:"W.UP",lead_day:3,predicted_bust_probability:x.pct/100,outcome:"incorrect",status:"pending",submitted_by:"forecaster"}},errors:[[403,"The role cannot record outcomes"],[422,"Unknown subdivision, or lead day out of range"]]},
+{m:"POST",p:"/api/v1/outcomes/{id}/review",d:"Approve or reject a pending outcome. A senior forecaster cannot review their own entry.",roles:["senior"],status:200,params:[["id","Outcome id in the path"],["decision","approve or reject"]],req:{decision:"approve"},res:function(){return {id:17,status:"approved",reviewed_by:"senior"}},errors:[[403,"Only senior forecasters may review, and not their own entries"],[409,"The entry is not pending"]]},
+{m:"GET",p:"/api/v1/users",d:"List users with their roles and account status.",roles:["admin"],status:200,params:[],res:function(){return {count:S.users.length,items:S.users.slice(0,3).map(function(u){return {id:u.id,name:u.name,role:u.role,active:u.active}})}},errors:[[403,"Administrators only"]]},
+{m:"POST",p:"/api/v1/users",d:"Add a user and assign one of the four roles.",roles:["admin"],status:201,params:[["id","3 to 20 lowercase letters or digits, starting with a letter"],["name","The person's name"],["role","duty, senior, admin or observer"]],req:{id:"mkulkarni",name:"M. Kulkarni",role:"senior"},res:function(){return {id:"mkulkarni",name:"M. Kulkarni",role:"senior",active:true}},errors:[[409,"That user ID already exists"],[422,"The user ID format is invalid"]]},
+{m:"PATCH",p:"/api/v1/users/{id}",d:"Change a user's role or deactivate or reactivate the account.",roles:["admin"],status:200,params:[["id","User id in the path"],["role","Optional new role"],["active","Optional true or false"]],req:{role:"observer",active:true},res:function(){return {id:"abhosale",role:"observer",active:true}},errors:[[403,"Administrators cannot change or deactivate their own account"]]},
+{m:"PUT",p:"/api/v1/settings/bust-definition",d:"Set the bust definition used at the next retraining run.",roles:["admin"],status:200,params:[["error_threshold_mm","1 to 500"],["regional_percentile","50 to 99"]],req:{error_threshold_mm:25,regional_percentile:95},res:function(){return {saved:true,error_threshold_mm:S.settings.thr,regional_percentile:S.settings.pct,applies_from:"next retraining run"}},errors:[[422,"A value is out of range"]]},
+{m:"POST",p:"/api/v1/retraining",d:"Start a retraining run on approved outcomes only.",roles:["admin"],status:202,params:[],res:function(){return {job_id:"rt-0001",status:"queued",approved_outcomes_used:fbStats().total}},errors:[[409,"A retraining run is already in progress"]]},
+{m:"GET",p:"/api/v1/audit",d:"Recent administrative actions.",roles:["admin"],status:200,params:[["limit","Number of entries, up to 50"]],res:function(){return {items:S.audit.length?S.audit.slice(0,3).map(function(a){return {time:a.t,actor:a.by,action:a.a}}):[{time:"10:42",actor:"V. Rao",action:"Added user M. Kulkarni (mkulkarni) as senior forecaster"}]}}}
+];
+function paintApi(){
+  var day=+$("#api-day").value||3;
+  $("#api-list").innerHTML=API.map(function(a,i){return '<button type="button" role="tab" data-i="'+i+'" aria-selected="'+(S.api===i)+'"><span class="mth '+a.m.toLowerCase()+'">'+a.m+'</span><span>'+esc(a.p)+'</span></button>'}).join("");
+  $$("#api-list button").forEach(function(b){b.addEventListener("click",function(){S.api=+b.dataset.i;paintApi()})});
+  var a=API[S.api];
+  var roles=ROLE_KEYS.filter(function(k){return a.roles.indexOf(k)>=0}).map(function(k){return '<span style="background:'+ROLES[k].color+'">'+ROLES[k].label+'</span>'}).join("");
+  var out='<h2 class="ph"><span class="mth '+a.m.toLowerCase()+'">'+a.m+'</span> '+esc(a.p)+'</h2><p style="margin-bottom:10px">'+esc(a.d)+'</p><h3 class="mt">Allowed roles</h3><div class="rchips" style="margin:6px 0 12px">'+roles+'</div>';
+  if(a.params.length)out+='<h3 class="mt">'+(a.m==="GET"?"Query parameters":"Fields")+'</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody>'+a.params.map(function(p){return '<tr><td class="n">'+esc(p[0])+'</td><td>'+esc(p[1])+'</td></tr>'}).join("")+'</tbody></table></div>';
+  if(a.req)out+='<h3 class="mt" style="margin-top:12px">Sample request body</h3><pre class="json">'+esc(JSON.stringify(a.req,null,2))+'</pre>';
+  out+='<h3 class="mt" style="margin-top:12px">Sample response, status '+a.status+'</h3><pre class="json">'+esc(JSON.stringify(a.res(day),null,2))+'</pre>';
+  if(a.errors&&a.errors.length)out+='<h3 class="mt" style="margin-top:12px">Errors</h3><ul>'+a.errors.map(function(e){return '<li><b>'+e[0]+'</b> '+esc(e[1])+'</li>'}).join("")+'</ul>';
+  $("#api-detail").innerHTML=out;
+}
+
 /* ---------- wiring ---------- */
 function wire(){
   $("#subs").innerHTML=SUBS.map(function(s){return '<option value="'+esc(s.name)+'"></option><option value="'+esc(s.code)+'"></option>'}).join("");
@@ -1721,6 +1823,10 @@ function wire(){
   mapHome=makeMap($("#carto-home"),false,null,function(id,on){landReadout(on?id:null)});
   mapDash=makeMap($("#carto-dash"),true,function(id){touch();S.sel=id;S.picked=true;paintDash()});
   mapTrust=makeMap($("#carto-trust"),true,function(id){S.trSel=id;paintTrust()},trustHover);
+  $("#ev-f").innerHTML='<option value="all">All weather events</option>'+EVENTS.map(function(e){return '<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>'}).join("");
+  $("#ev-f").addEventListener("change",function(){touch();S.evF=$("#ev-f").value;paintDash()});
+  $("#api-day").innerHTML=[1,2,3,4,5,6,7,8,9,10].map(function(d){return '<option value="'+d+'"'+(d===3?' selected':'')+'>Day '+d+'</option>'}).join("");
+  $("#api-day").addEventListener("change",paintApi);
   buildDays();
   $$(".playbtn").forEach(function(b){b.addEventListener("click",function(){if(S.auto){touch()}else{S.touched=false;startAuto()}})});
   $("#lplay").addEventListener("click",function(){S.landPaused=!S.landPaused;paintLanding()});
