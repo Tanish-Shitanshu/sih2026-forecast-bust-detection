@@ -53,4 +53,4 @@ def test_subdivision_weighting(tmp_path):
 
 def test_request_plan_covers_all_months():
     p = request_plan()
-    assert len(p) == 23 * 12 and (p["east"] > p["west"]).all()
+    assert len(p) == 23 * 4 and (p["east"] > p["west"]).all()

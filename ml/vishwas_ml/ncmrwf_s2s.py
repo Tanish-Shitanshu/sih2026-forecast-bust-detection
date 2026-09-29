@@ -101,7 +101,9 @@ def to_subdivisions(grid, weights):
 
 
 def request_plan(years=range(1993, 2016), init_days=("01", "09", "17", "25")):
-    """One portal request per (year, month), all four init days, Forecast Day T..T+9."""
-    return pd.DataFrame([{"year": y, "month": m, "init_days": ",".join(init_days), "forecast_days": "T..T+9",
+    """Portal requests for the full archive. On the form, Year and Initialization Day are single
+    choice but Month is multi-select, so one request = one year x one init day x all 12 months,
+    Forecast Day T..T+9: 23 x 4 = 92 requests."""
+    return pd.DataFrame([{"year": y, "init_day": d, "months": "all 12", "forecast_days": "T..T+9",
                           "variable": "Total Precipitation Amount", "north": 38, "south": 6, "east": 98, "west": 68}
-                         for y in years for m in range(1, 13)])
+                         for y in years for d in init_days])
