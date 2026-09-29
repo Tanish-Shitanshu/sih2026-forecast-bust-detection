@@ -54,3 +54,15 @@ def test_subdivision_weighting(tmp_path):
 def test_request_plan_covers_all_months():
     p = request_plan()
     assert len(p) == 23 * 4 and (p["east"] > p["west"]).all()
+
+
+def test_float32_grid_joins_float64_weights(tmp_path):
+    """NetCDF coordinates are float32, weight tables float64 (CSV): every cell must still match."""
+    _write(tmp_path, 68.33, 98.0, days=1)
+    g = read_request(tmp_path, max_day=0)
+    cells = g[["latitude", "longitude"]].drop_duplicates()
+    w = cells.astype("float32").astype("float64").round(6).assign(subdivision_code="X", weight=1.0)
+    csv = tmp_path / "w.csv"
+    w.to_csv(csv, index=False)
+    out = to_subdivisions(g.astype({"latitude": "float32", "longitude": "float32"}), pd.read_csv(csv))
+    assert len(out) == 1 and np.isclose(out["forecast_rain_mm"].iloc[0], 5.0)

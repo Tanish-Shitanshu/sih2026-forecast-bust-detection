@@ -59,12 +59,12 @@ def read_request(src, max_day=9):
             continue
         with xr.open_dataset(f) as ds:
             a = ds["apcp"].isel(t=0).load()
-        lon = ((a["longitude"].values + 180) % 360) - 180
+        lon = ((a["longitude"].values.astype("float64") + 180) % 360) - 180
         inside = (lon >= INDIA["lon"][0]) & (lon <= INDIA["lon"][1])
         if inside.sum() < 30:
             raise ValueError(f"{f.name} covers only {inside.sum()} longitudes inside 68-98E; the request's EAST and "
                              "WEST boxes were probably swapped (form order is NORTH, SOUTH, EAST, WEST)")
-        lat = a["latitude"].values
+        lat = a["latitude"].values.astype("float64")
         keep_lat = (lat >= INDIA["lat"][0]) & (lat <= INDIA["lat"][1])
         v = a.values[np.ix_(keep_lat, inside)]
         check_units(v)
@@ -87,12 +87,15 @@ def to_subdivisions(grid, weights):
     pairs table (date = issue/init date)."""
     w = weights[["latitude", "longitude", "subdivision_code", "weight"]].copy()
     g = grid.copy()
-    for d in (g, w):  # float32 grid coordinates vs a mask built elsewhere: join on rounded values
-        d["latitude"] = d["latitude"].round(3)
-        d["longitude"] = d["longitude"].round(3)
+    for d in (g, w):  # float32 NetCDF coordinates vs a float64 table: cast, then join on rounded values
+        d["latitude"] = d["latitude"].astype("float64").round(3)
+        d["longitude"] = d["longitude"].astype("float64").round(3)
     m = g.merge(w, on=["latitude", "longitude"], how="inner")
     if m.empty:
         raise ValueError("no S2S grid cell matched the weights table; build the weights on the N216 grid")
+    lost = set(w["subdivision_code"]) - set(m["subdivision_code"])
+    if lost:
+        raise ValueError(f"weights for {sorted(lost)} matched no grid cell; grid and weights coordinates differ")
     m["wr"] = m["forecast_rain_mm"] * m["weight"]
     out = m.groupby(["init_date", "subdivision_code", "lead_day"]).agg(wr=("wr", "sum"), w=("weight", "sum"))
     out["forecast_rain_mm"] = out["wr"] / out["w"]

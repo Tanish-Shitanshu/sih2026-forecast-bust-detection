@@ -102,6 +102,13 @@ The accuracy column shows why accuracy isn't the headline metric: climatology sc
   - Caveat: it's NCMRWF's extended-range system, not the operational deterministic NCUM-G.
 - **NGFS datasets on the same portal are reanalyses** (analysis fields, no lead times), so they can't serve as the forecast source.
 
+**S2S is now working end to end (2026-09-29).**
+- `vishwas_ml/ncmrwf_s2s.py` reads the portal's downloads.
+- `vishwas_ml/subdivision_weights.py` builds grid-to-subdivision weights from IMD's subdivision shapefile (`indian_met_zones.v2`, github.com/India-Meteorological-Department/Indian_met_zones). The N216 table is committed as `data/weights_ncmrwf_s2s_n216.csv`.
+- `scripts/build_s2s_pairs.py` writes the pairs table (S2S + IMD, optionally merging the data team's ERA5 parquet).
+- **Lead-day alignment verified against IMD 2015:** file `day00` correlates 0.77 with IMD date init+1, against 0.62 and 0.54 for the neighbouring days, so `dayNN` = `lead_day` NN+1.
+- Forecast skill falls from 0.77 (Day 1) to 0.38 (Day 10).
+
 The pipeline handles either source unchanged: an issue cadence of every 8 days (S2S) is fine, and run-to-run change is simply computed against the previous init.
 
 ## Data questions
