@@ -3,6 +3,13 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# data/ pipeline: raw downloads (multi-GB, re-downloadable) and per-year
+# intermediates stay local; the code, the boundary reference, and the final
+# combined dataset are what get committed.
+data/raw/
+data/processed/_features_*.parquet
+data/processed/_parts/
+
 # C extensions
 *.so
 
