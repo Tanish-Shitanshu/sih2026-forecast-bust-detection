@@ -1,6 +1,7 @@
 {
+  "source": "synthetic",
   "version": "0.1.0",
-  "trained_at": "2026-09-29T05:52:24+00:00",
+  "trained_at": "2026-09-29T10:59:50+00:00",
   "data_path": "data/synthetic_pairs.parquet",
   "data_sha256_16": "d8072014154cc53b",
   "data_report": {
@@ -85,7 +86,7 @@
   ],
   "lightgbm": {
     "best_iteration": 162,
-    "train_seconds": 1.98
+    "train_seconds": 2.3
   },
   "importance": {
     "features": {

@@ -60,11 +60,13 @@ def describe(group, x, ctx):
     if group == "lead":
         return f"Day {L} lead time" + (", where forecast errors grow" if L >= 6 else "")
     if group == "amount":
-        if abs(fc - ctx["rain_thr"]) < 2:
-            return (f"Forecast of {fc:.1f} mm sits near the {ctx['rain_thr']:g} mm rain/no-rain line, "
-                    "so a small error flips the call")
+        thr = ctx["rain_thr"]
+        if abs(fc - thr) < 1.0:
+            return f"Forecast of {fc:.1f} mm sits right at the {thr:g} mm rain/no-rain line, so a small error flips the call"
         if fc < 0.5:
             return f"Little or no rain forecast ({fc:.1f} mm), {_ratio(x['fc_clim_ratio'])} the usual for {month}"
+        if fc < thr:
+            return f"Light rain forecast ({fc:.1f} mm), below the {thr:g} mm rain/no-rain line"
         return f"Forecast of {fc:.0f} mm, {_ratio(x['fc_clim_ratio'])} the usual for {month}"
     if group == "run_change":
         j, gap = x["fc_jump"], x["fc_jump_gap"]

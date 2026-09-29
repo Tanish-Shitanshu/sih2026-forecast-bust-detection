@@ -1,7 +1,11 @@
 {
-  "data_path": "data/synthetic_pairs.parquet",
+  "source": "synthetic",
+  "sources": {
+    "synthetic": {"data_path": "data/synthetic_pairs.parquet", "models_dir": "models/synthetic"},
+    "ncmrwf": {"data_path": "data/ncmrwf_pairs.parquet", "models_dir": "models/ncmrwf"},
+    "gefs": {"data_path": "data/gefs_pairs.parquet", "models_dir": "models/gefs"}
+  },
   "subdivisions_path": "data/subdivisions.json",
-  "models_dir": "models",
 
   "bust": {
     "min_error_mm": 25,

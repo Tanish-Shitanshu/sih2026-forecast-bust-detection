@@ -66,3 +66,57 @@ def test_float32_grid_joins_float64_weights(tmp_path):
     w.to_csv(csv, index=False)
     out = to_subdivisions(g.astype({"latitude": "float32", "longitude": "float32"}), pd.read_csv(csv))
     assert len(out) == 1 and np.isclose(out["forecast_rain_mm"].iloc[0], 5.0)
+
+
+def _write_var(folder, fname_var, name, std, value, init="20150701", days=3):
+    lat = np.arange(6.389, 38.0, 0.5555556, dtype="float32")
+    lon = np.arange(68.33, 98.0, 0.8333333, dtype="float32")
+    for nn in range(days):
+        a = np.full((1, lat.size, lon.size), value + nn, "float32")
+        ds = xr.Dataset({name: (("t", "latitude", "longitude"), a, {"standard_name": std})},
+                        coords={"t": [pd.Timestamp(init) + pd.Timedelta(days=nn)], "latitude": lat, "longitude": lon})
+        ds.to_netcdf(folder / f"{fname_var}_IC{init}_day{nn:02d}.nc")
+
+
+def test_reads_weather_variables_by_metadata(tmp_path):
+    _write(tmp_path, 68.33, 98.0, days=3)
+    _write_var(tmp_path, "PRMSL-msl", "prmsl", "air_pressure_at_sea_level", 100500.0)
+    _write_var(tmp_path, "UGRD-10m", "ugrd", "eastward_wind", 3.0)
+    _write_var(tmp_path, "MYSTERY-x", "zzz", "unknown_thing", 1.0)
+    with pytest.warns(UserWarning, match="unrecognised"):
+        g = read_request(tmp_path, max_day=2)
+    assert {"forecast_rain_mm", "mslp", "wind_u10"} <= set(g.columns)
+    assert np.allclose(g.loc[g["lead_day"] == 1, "mslp"], 100500.0)
+
+
+def test_build_pairs_timing():
+    from vishwas_ml.ncmrwf_s2s import build_pairs
+
+    d0 = pd.Timestamp("2015-07-09")
+    fc = pd.DataFrame({"date": d0, "subdivision_code": "KL", "lead_day": [1, 2, 3],
+                       "forecast_rain_mm": [10.0, 20.0, 30.0], "mslp": [1000.0, 990.0, 980.0]})
+    obs = pd.DataFrame({"date": pd.date_range("2015-07-07", periods=6), "subdivision_code": "KL",
+                        "observed_rain_mm": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]})  # 7th..12th July
+    p = build_pairs(fc, obs)
+    assert p["observed_rain_mm"].tolist() == [4.0, 5.0, 6.0]      # valid = issue + lead
+    assert (p["mslp"] == 1000.0).all()                             # issue-time state for every lead
+    assert (p["total_precipitation"] == 2.0).all()                 # IMD issue date - 1 (8 July), never the 9th
+    assert np.allclose(p["error_mm"], [6.0, 15.0, 24.0])
+
+
+def test_staggered_wind_grid_is_averaged_on_its_own_cells(tmp_path):
+    """UM winds sit half a cell east-west of rain/pressure; each must use its own weights."""
+    _write(tmp_path, 68.75, 98.0, days=2)                       # rain grid
+    lat = np.arange(6.389, 38.0, 0.5555556, dtype="float32")
+    lon_uv = np.arange(68.333, 97.6, 0.8333333, dtype="float32")  # staggered grid
+    a = np.full((1, lat.size, lon_uv.size), 4.0, "float32")
+    xr.Dataset({"u": (("t", "latitude", "longitude"), a, {"standard_name": "eastward_wind"})},
+               coords={"t": [pd.Timestamp("2015-07-02")], "latitude": lat, "longitude": lon_uv}
+               ).to_netcdf(tmp_path / "UGRD-10m_IC20150701_day01.nc")
+    g = read_request(tmp_path, max_day=1)
+    cells = lambda c: g.loc[g[c].notna(), ["latitude", "longitude"]].drop_duplicates()  # noqa: E731
+    w = pd.concat([cells("forecast_rain_mm").assign(subdivision_code="X", weight=1.0),
+                   cells("wind_u10").assign(subdivision_code="X", weight=1.0)])
+    out = to_subdivisions(g, w)
+    assert np.isclose(out.loc[out["lead_day"] == 2, "wind_u10"].iloc[0], 4.0)
+    assert np.isclose(out.loc[out["lead_day"] == 1, "forecast_rain_mm"].iloc[0], 5.0)

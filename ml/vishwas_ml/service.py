@@ -23,7 +23,7 @@ import pandas as pd
 
 from .actions import as_pct, tier_for, trust_level, trust_note
 from .analogs import AnalogIndex
-from .config import load_config, load_meta
+from .config import ML_DIR, load_config, load_meta
 from .events import tag_events
 from .explain import explain_rows
 from .feedback import OUTCOMES, append_outcome, read_outcomes
@@ -59,7 +59,7 @@ class VishwasService:
         self.history = history
         self.subs = {s["code"]: s for s in self.meta["subdivisions"]}
         self._by_name = {s["name"].lower(): s["code"] for s in self.meta["subdivisions"]}
-        self.feedback_path = Path(feedback_path or self.cfg["models_dir"].parent / "data" / "feedback_dev.jsonl")
+        self.feedback_path = Path(feedback_path or ML_DIR / "data" / f"feedback_dev_{self.cfg.get('source')}.jsonl")
         self._cache = {}
 
     # ---------------------------------------------------------------- inputs

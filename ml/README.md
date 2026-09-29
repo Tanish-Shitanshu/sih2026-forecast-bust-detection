@@ -117,8 +117,18 @@ State these plainly in the write-up and demo.
 - **Which NCMRWF model it is.** The S2S reforecast: NCMRWF's Unified Model coupled system (GC2/GA6, N216 ≈ 60 km), initialized from ERA-Interim, with 4 runs per month (1st, 9th, 17th, 25th), 1993–2015. It is not the operational high-resolution NCUM-G deterministic run forecasters use day to day. It is the same model family, and it is real NCMRWF output.
 - **Resolution vs subdivision averaging.** Averaging over a subdivision removes much of the resolution gap for large inland subdivisions (e.g. W.RJ, J&K, W.MP: 50–60 grid cells each). It removes much less for narrow coastal and hilly ones (Coastal Karnataka: 12 cells, 2 mostly inside; Kerala; Konkan & Goa), where terrain-driven rain is resolution-sensitive. Expect the model's bust estimates to be least transferable there.
 - **Not just resolution.** The model configuration (coupled ocean, model version, ERA-Interim start states) differs from today's operational system, so the error behaviour learned here is a proxy for the operational system's, though a much closer one than GEFS.
-- **Run frequency.** 4 runs a month rather than daily, so fewer rows per year (~4,000) and a weaker run-to-run change feature (only Day 1–2 forecasts have an earlier run covering the same day).
+- **Run frequency: 12 runs a year.** The documentation lists inits on the 1st, 9th, 17th and 25th, but the portal only offers **init day 01** for every year (09/17/25 are disabled on the download form, checked 2026-09-29 for 1993–2015). That gives 12 runs × 33 subdivisions × 10 lead days = 3,960 rows per year, **~91,000 rows over 1993–2015**. Runs are a month apart, so the run-to-run change feature is always empty for this source; the model simply doesn't use it.
+- **Weather state is the day-01 forecast, not the analysis.** The portal has no "T" field for MSLP, surface pressure or winds (they start at day01). The pipeline uses the model's day-01 values as the issue-time state. They are NCMRWF output that exists when the forecast is issued, so there's no leakage, but they describe the atmosphere 24 h ahead, not the observed state at issue.
+- **Staggered grid.** UM 10 m winds sit half a grid cell east-west of rain and pressure. Each variable is averaged over its own cells (the weights table carries both grids).
 - **Years.** 1993–2015 only. Live demo rows for 2026 would need the operational NCUM feed, which isn't on the portal.
+
+## Demo event: Chennai floods, December 2015
+
+From the real NCMRWF run of 1 Dec 2015 against IMD, subdivision Tamil Nadu & Puducherry:
+- **Day 1 (2 Dec):** forecast **12.4 mm**, observed **41.0 mm** subdivision-wide. That's a magnitude bust (error −28.6 mm, over the 25 mm floor).
+- **5–11 Dec:** the forecast called almost no rain (0.7–4.6 mm) while 3–21 mm fell, so there are rain/no-rain busts on Days 4, 5, 8, 9 and 10.
+- **Neighbouring subdivisions** (Coastal AP, Rayalaseema) were forecast well.
+- **Caveat to say out loud:** 41 mm is the average over all of Tamil Nadu; Chennai itself got several hundred mm. Subdivision averaging dilutes local extremes.
 
 ## Data questions
 

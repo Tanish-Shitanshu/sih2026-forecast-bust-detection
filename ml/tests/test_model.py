@@ -95,3 +95,17 @@ def test_schema_validation_rejects_bad_tables(small_data):
     with pytest.raises(SchemaError):
         validate(ok.drop(columns="forecast_rain"), codes)
     validate(ok.drop(columns="mslp"), codes)  # ERA5 variables are optional
+
+
+def test_fast_ap_matches_sklearn_and_bootstrap_brackets_estimate():
+    from sklearn.metrics import average_precision_score
+    from vishwas_ml.evaluation import block_bootstrap, fast_ap
+
+    rng = np.random.default_rng(1)
+    y = (rng.random(4000) < 0.2).astype(int)
+    p = np.round(np.clip(0.2 + 0.3 * (y - 0.2) + rng.normal(0, 0.2, 4000), 0, 1), 2)  # ties on purpose
+    assert np.isclose(fast_ap(y, p), average_precision_score(y, p))
+    b = block_bootstrap(y, {"m": p, "r": rng.random(4000)}, np.repeat(np.arange(100), 40), reps=200)
+    m = b["pr_auc"]["m"]
+    assert m["lo"] <= m["pr_auc"] <= m["hi"]
+    assert b["differences"]["m - r"]["lo"] > 0

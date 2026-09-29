@@ -21,7 +21,7 @@ import pandas as pd
 from . import __version__
 from .analogs import AnalogIndex, importance_weights
 from .config import ML_DIR, load_config, load_meta, subdivision_codes
-from .evaluation import core, grouped, reliability
+from .evaluation import block_bootstrap, core, grouped, reliability
 from .events import tag_events
 from .explain import global_importance
 from .features import FEATURES, FeatureBuilder
@@ -101,10 +101,19 @@ def evaluate(model, df, split, cfg, out_dir=None, log=print):
     per_sub = grouped(t, "subdivision_code", **kw)
     busts = t[t["y"] == 1]
     recall_by_trigger = {r: float((g["p"] >= kw["alert"]).mean()) for r, g in busts.groupby("trigger_reason")}
+    issue = df.loc[te, "date"].to_numpy()
+    boot = block_bootstrap(t["y"], {"model": t["p"], "forecast_only": t["p_fc"], "climatology": t["p_clim"]},
+                           issue, reps=cfg.get("bootstrap_reps", 500))
+    lead_ci = {}
+    for L, g in t.assign(issue=issue).groupby("lead_day"):
+        b = block_bootstrap(g["y"], {"model": g["p"]}, g["issue"], reps=cfg.get("bootstrap_reps", 500) // 2)
+        lead_ci[int(L)] = b["pr_auc"]["model"]
+    per_lead["pr_auc_lo"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["lo"])
+    per_lead["pr_auc_hi"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["hi"])
     rel = reliability(t["y"], t["p"])
     rel_raw = reliability(t["y"], model.predict_raw(X[te]))
     metrics = {"split_years": split["years"], "n_test": int(te.sum()), "overall": overall,
-               "recall_at_alert_by_trigger": recall_by_trigger,
+               "recall_at_alert_by_trigger": recall_by_trigger, "bootstrap": boot,
                "per_lead": per_lead.round(4).to_dict(orient="records"),
                "reliability_calibrated": rel.round(4).to_dict(orient="records"),
                "reliability_raw": rel_raw.round(4).to_dict(orient="records")}
@@ -150,6 +159,12 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     t0 = time.time()
     cfg = cfg or load_config()
     out_dir = Path(out_dir or cfg["models_dir"])
+    prev = out_dir / "metadata.json"
+    if prev.exists():
+        prev_src = json.loads(prev.read_text()).get("source")
+        if prev_src and prev_src != cfg.get("source"):
+            raise ValueError(f"{out_dir} holds a {prev_src!r} bundle; refusing to overwrite it with a "
+                             f"{cfg.get('source')!r} model (each forecast source keeps its own thresholds and model)")
     log(f"loading {data_path or cfg['data_path']}")
     df, report, timing, split, meta, path = prepare(cfg, data_path, log)
     tr, ca, te = split["train"], split["calib"], split["test"]
@@ -189,7 +204,7 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     analogs = AnalogIndex().fit(X, lib, importance_weights(imp["features"]))
 
     model.metadata = {
-        "version": __version__, "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": cfg.get("source"), "version": __version__, "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "data_path": _rel(path), "data_sha256_16": _sha(path), "data_report": report, "era5_timing": timing,
         "split_years": split["years"], "bust_definition": cfg["bust"], "label_agreement_with_provided": agree,
         "features": FEATURES, "lightgbm": info, "importance": imp,
