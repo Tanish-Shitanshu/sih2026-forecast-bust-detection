@@ -476,7 +476,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 </header>
 
 <nav class="nav" aria-label="Main"><div class="wrap"><ul id="navl"></ul></div></nav>
-<div class="rolebar" id="rolebar" hidden><div class="wrap rb-in"><span class="rb-badge" id="rb-badge"></span><b id="rb-ws"></b><span id="rb-name"></span><ul class="rb-chips" id="rb-chips"></ul></div></div>
+<div class="rolebar" id="rolebar" hidden><div class="wrap rb-in"><span class="rb-badge" id="rb-badge"></span><b id="rb-ws"></b><span id="rb-name"></span><ul class="rb-chips" id="rb-chips"></ul><label class="cycle-pick-lbl" for="cycle-pick" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.8125rem">Forecast cycle<select id="cycle-pick" aria-label="Forecast cycle"></select></label></div></div>
 <div class="crumbs" id="crumbs" hidden><div class="wrap"><nav aria-label="Breadcrumb"><ol id="crumbs-l"></ol></nav></div></div>
 
 <main id="main" tabindex="-1">
@@ -568,7 +568,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       </form>
       <div class="panel">
         <h2 class="ph">Demo accounts</h2>
-        <p class="note" style="margin-top:0">This prototype has no real authentication. Each built-in account opens a different workspace. All use the password <b>vishwas123</b>.</p>
+        <p class="note" style="margin-top:0">Each built-in account opens a different workspace, backed by a real sign-in against the backend. All use the password <b>vishwas123</b>.</p>
         <div class="accts" id="accts"></div>
       </div>
     </div>
@@ -594,7 +594,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 <section id="v-dashboard" data-view="dashboard" hidden>
   <div class="wrap">
     <h1 class="vt" data-i18n="vt_dash">Dashboard</h1>
-    <p class="lead">Bust-risk guidance for the 00Z cycle of 28 September 2026. Select a subdivision to see why it is flagged and what to do.</p>
+    <p class="lead" id="dash-lead">Bust-risk guidance for the selected forecast cycle. Select a subdivision to see why it is flagged and what to do.</p>
     <div class="dayrow"><span class="dl">Lead day</span><div class="days" data-days role="group" aria-label="Lead day"></div></div>
     <div class="grid3">
       <div class="panel">
@@ -770,7 +770,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
         <div class="rt-track rt-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="rt-prog"><i class="rt-bar" id="rt-bar"></i></div>
         <p class="rt-stage" id="rt-stage" role="status">Not running</p>
         <div class="acts"><button type="button" class="btn rt-btn" id="rt-btn" data-act="retrain">Start retraining</button></div>
-        <p class="note">Simulated in this prototype. The working system trains on approved outcomes only.</p>
+        <p class="note">Trains a real model on approved outcomes only, on a background job. This can take a few minutes.</p>
       </div>
     </div>
     <div class="panel" style="margin-top:16px">
@@ -1138,20 +1138,129 @@ function byId(D,id){return D.filter(function(d){return d.s.id===id})[0]||D[0]}
 function flagged(D){return D.filter(function(d){return d.t.k==="orange"||d.t.k==="red"}).length}
 function reduced(D){return D.filter(function(d){return d.u>=.55}).length}
 
+/* ---------- backend API client ----------
+   Everything below the landing page and the API reference (which stay on the
+   illustrative calc() sample, as already labelled in the UI) is driven by the
+   real backend: NCMRWF archive ends 2015-12-01, so the whole signed-in
+   workspace is a historical replay of one selected forecast cycle. */
+var API_BASE="http://localhost:8000";
+function apiUrl(p){return API_BASE+p}
+function apiFetch(path,opts){
+  opts=opts||{};
+  var headers={"Content-Type":"application/json"};
+  if(S.token)headers.Authorization="Bearer "+S.token;
+  return fetch(apiUrl(path),{method:opts.method||"GET",headers:headers,body:opts.body?JSON.stringify(opts.body):undefined})
+    .then(function(r){
+      return r.json().catch(function(){return {}}).then(function(body){
+        if(r.status===401&&S.user){signOut();notice("Your session has expired. Sign in again.");}
+        if(!r.ok){var e=new Error(body.detail||("Request failed with status "+r.status));e.status=r.status;throw e}
+        return body;
+      });
+    });
+}
+function subByCode(code){return SUBS.filter(function(x){return x.code===code})[0]}
+function nameOf(code){var s=subByCode(code);return s?s.name:code}
+var MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDate(iso){
+  if(!iso)return "";
+  var d=new Date(iso);if(isNaN(d))return String(iso).slice(0,10);
+  return d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear();
+}
+function cycleDate(){return S.cycle?S.cycle.split("T")[0]:null}
+function cycleLabel(){return S.cycle?("00Z cycle of "+fmtDate(cycleDate())):"the selected cycle"}
+
+var RCACHE={},SEL_CACHE={};
+function rKey(day){return cycleDate()+"|"+day}
+function mergeToD(cmItems,trustItems){
+  var trustByCode={};
+  (trustItems||[]).forEach(function(x){trustByCode[x.code]=x});
+  return cmItems.map(function(x){
+    var s=subByCode(x.code)||{id:0,code:x.code,name:x.name,seed:1};
+    var pct=Math.round(x.bust_probability*100),fc=Math.round(x.forecast_confidence*100);
+    var t=TIERS.filter(function(tt){return tt.k===x.level})[0]||tierFor(x.bust_probability);
+    var tr=trustByCode[x.code];
+    var conf=tr?Math.round(tr.model_self_confidence*100):(100-pct);
+    var u=1-conf/100;
+    var v=tr&&VIO.filter(function(vv){return vv.lab.toLowerCase()===tr.level})[0]||vioFor(u);
+    return {s:s,b:x.bust_probability,pct:pct,fc:fc,t:t,u:u,conf:conf,v:v,ev:x.weather_event||null,reason:tr?tr.reason:null};
+  });
+}
+function loadDay(day){
+  var key=rKey(day);
+  if(RCACHE[key])return Promise.resolve(RCACHE[key]);
+  var c=cycleDate();
+  return Promise.all([
+    apiFetch("/api/v1/confidence-map?lead_day="+day+"&cycle="+encodeURIComponent(c)),
+    apiFetch("/api/v1/model-trust?lead_day="+day+"&cycle="+encodeURIComponent(c))
+  ]).then(function(res){
+    var D=mergeToD(res[0].items,res[1].items);
+    RCACHE[key]=D;
+    return D;
+  });
+}
+function preloadCycle(){
+  RCACHE={};SEL_CACHE={};
+  var days=[1,2,3,4,5,6,7,8,9,10];
+  return Promise.all(days.map(loadDay));
+}
+function calcReal(day){return RCACHE[rKey(day)]||calc(day)}
+function loadSelDetail(day,code){
+  var key=rKey(day)+"|"+code;
+  if(SEL_CACHE[key])return Promise.resolve(SEL_CACHE[key]);
+  var c=cycleDate();
+  return apiFetch("/api/v1/subdivisions/"+encodeURIComponent(code)+"/explain?lead_day="+day+"&cycle="+encodeURIComponent(c))
+    .then(function(ex){SEL_CACHE[key]=ex;return ex});
+}
+function loadCycles(){
+  return apiFetch("/api/v1/cycles").then(function(res){
+    S.cycles=res.items;
+    var want=S.cycles.filter(function(c){return c.indexOf("2015-12-01")===0})[0];
+    S.cycle=want||S.cycles[S.cycles.length-1];
+    return S.cycles;
+  });
+}
+function loadOutcomes(){
+  return apiFetch("/api/v1/outcomes").then(function(res){
+    S.fb=res.items.map(function(r){
+      return {id:r.id,date:fmtDate(r.date),region:nameOf(r.subdivision),leadDay:r.lead_day,
+        predicted:Math.round(r.predicted_bust_probability*100),outcome:r.outcome,
+        by:r.submitted_by_name||r.submitted_by,byId:r.submitted_by,status:r.status,
+        note:r.note||"",rev:r.reviewed_by_name||r.reviewed_by||null,fresh:false};
+    });
+    return S.fb;
+  });
+}
+function loadAdminExtras(){
+  if(!S.user||S.user.role!=="admin")return Promise.resolve();
+  return Promise.all([
+    apiFetch("/api/v1/users").then(function(res){S.users=res.items}),
+    apiFetch("/api/v1/audit").then(function(res){
+      S.audit=res.items.map(function(a){return {t:a.time,by:a.actor,a:a.action}});
+    }),
+    apiFetch("/api/v1/settings/bust-definition").then(function(res){
+      S.settings={thr:res.error_threshold_mm,pct:res.regional_percentile};
+    })
+  ]);
+}
+function afterSignIn(){
+  return loadCycles()
+    .then(preloadCycle)
+    .then(loadOutcomes)
+    .then(loadAdminExtras);
+}
+
 /* ---------- state ---------- */
 var S={route:"home",mapMode:"bust",evF:"all",api:0,landDay:3,landPaused:false,landStep:0,landStepUser:false,landRole:0,landRoleUser:false,rot:0,
   day:3,sel:null,picked:false,touched:false,auto:false,region:"nw",trSel:null,
   fbOutcome:"all",fbStatus:"all",fbMine:false,fbQuery:"",fbSort:{k:null,dir:1},
-  fb:FB0.map(function(r,i){var x={};for(var k in r)x[k]=r[k];x.id=i+1;x.status="approved";x.note="";return x}),nextFb:17,
-  users:mkUsers(),audit:[],settings:{thr:25,pct:95},retrain:{running:false,pct:0,stage:"Not running",n:0},
+  fb:[],
+  users:mkUsers(),audit:[],settings:{thr:25,pct:95},retrain:{running:false,pct:0,stage:"Not running",n:0},retrainJob:null,
   checks:[false,false,false,false,false],prev:{},
-  pipe:0,src:0,user:null,next:null,flash:null,lang:"en"};
+  pipe:0,src:0,user:null,token:null,cycle:null,cycles:[],next:null,flash:null,lang:"en"};
 var autoTimer=null,landT=[],retrainTimer=null,toastT=null;
 function t(k){return (S.lang==="hi"&&HI[k])||EN[k]}
 function can(a){return !!(S.user&&ROLES[S.user.role][a])}
 function findUser(id){return S.users.filter(function(u){return u.id===id})[0]}
-function nowT(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
-function audit(a){S.audit.unshift({t:nowT(),by:S.user?S.user.name:"System",a:a});if(S.audit.length>12)S.audit.length=12;if(S.route==="admin")paintAudit();paintNav()}
 function notice(msg){var e=$("#toast");e.textContent=msg;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){e.hidden=true},5000)}
 function fbStats(){
   var ap=S.fb.filter(function(r){return r.status==="approved"}),n=ap.length,c=0,i=0,p=0;
@@ -1219,8 +1328,18 @@ function makeMap(el,interactive,onPick,onHover){
 var mapHome,mapDash,mapTrust;
 
 /* ---------- session, nav, role bar ---------- */
-function saveSession(){try{if(S.user)sessionStorage.setItem("vishwas.user",S.user.id);else sessionStorage.removeItem("vishwas.user")}catch(e){}}
-function loadSession(){try{var id=sessionStorage.getItem("vishwas.user"),u=id&&findUser(id);if(u&&u.active)S.user=u}catch(e){}}
+function saveSession(){
+  try{
+    if(S.user&&S.token){sessionStorage.setItem("vishwas.user",JSON.stringify(S.user));sessionStorage.setItem("vishwas.token",S.token)}
+    else{sessionStorage.removeItem("vishwas.user");sessionStorage.removeItem("vishwas.token")}
+  }catch(e){}
+}
+function loadSession(){
+  try{
+    var raw=sessionStorage.getItem("vishwas.user"),token=sessionStorage.getItem("vishwas.token");
+    if(raw&&token){S.user=JSON.parse(raw);S.token=token}
+  }catch(e){}
+}
 function navLabel(r){
   if(r==="overview"&&S.user)return t("ws_"+S.user.role);
   var l=t(NAVKEY[r]);
@@ -1240,6 +1359,24 @@ function paintRoleBar(){
   $("#rb-ws").textContent=t("ws_"+S.user.role);
   $("#rb-name").textContent="Signed in as "+S.user.name;
   $("#rb-chips").innerHTML=r.chips.map(function(c){return '<li>'+esc(c)+'</li>'}).join("");
+  paintCyclePick();
+}
+function paintCyclePick(){
+  var sel=$("#cycle-pick");if(!sel||!S.cycles.length)return;
+  sel.innerHTML=S.cycles.map(function(c){return '<option value="'+c+'"'+(c===S.cycle?" selected":"")+'>'+fmtDate(c.split("T")[0])+' (00Z)</option>'}).join("");
+}
+function switchCycle(cycle){
+  if(cycle===S.cycle)return;
+  S.cycle=cycle;
+  var sel=$("#cycle-pick");if(sel)sel.disabled=true;
+  notice("Loading the "+cycleLabel()+"...");
+  Promise.all([preloadCycle(),loadOutcomes(),loadAdminExtras()]).then(function(){
+    if(sel)sel.disabled=false;
+    notice("Loaded the "+cycleLabel()+".");
+    var r=S.route;
+    if(r==="overview")paintOverview();else if(r==="dashboard")paintDash();else if(r==="regions")paintRegions();
+    else if(r==="model-trust")paintTrust();else if(r==="feedback"){paintFbCharts();paintFbAll()}
+  }).catch(function(err){if(sel)sel.disabled=false;notice("Could not load that cycle: "+err.message)});
 }
 function paintUser(){
   document.body.classList.toggle("out",!S.user);
@@ -1255,7 +1392,7 @@ function paintUser(){
   else if(r==="feedback")paintFbAll();
 }
 function resetFb(){S.fbOutcome="all";S.fbStatus="all";S.fbMine=false;S.fbQuery="";S.fbSort={k:null,dir:1}}
-function signOut(){S.user=null;saveSession();resetFb();S.checks=[false,false,false,false,false];S.touched=false;paintUser();nav("home")}
+function signOut(){S.user=null;S.token=null;saveSession();resetFb();S.fb=[];S.checks=[false,false,false,false,false];S.touched=false;paintUser();nav("home")}
 
 /* ---------- routing ---------- */
 function routeFromHash(){var h=(location.hash||"").replace(/^#\/?/,"").split("?")[0];return has(ROUTES,h)?h:"home"}
@@ -1400,7 +1537,7 @@ function blk(cls,title,key,to,text,href,link){
 function blocksHtml(a){return '<div class="blocks" style="margin-top:8px">'+a.join("")+'</div>'}
 function paintTicker(D){
   var st=fbStats(),top=topOf(D),fl=flagged(D);
-  var items=["Forecast cycle 00Z, 28 September 2026 loaded","Day "+S.day+": "+fl+" of 33 subdivisions at Alert or Warning","Highest bust risk on Day "+S.day+": "+top.s.name+" ("+top.pct+"%)","Model confidence reduced for "+reduced(D)+" subdivisions on Day "+S.day,st.total+" approved outcomes, "+st.cp+"% confirmed correct",st.pending+" outcomes waiting for approval","Illustrative data, not connected to a live feed"];
+  var items=["Forecast "+cycleLabel()+" loaded","Day "+S.day+": "+fl+" of 33 subdivisions at Alert or Warning","Highest bust risk on Day "+S.day+": "+top.s.name+" ("+top.pct+"%)","Model confidence reduced for "+reduced(D)+" subdivisions on Day "+S.day,st.total+" approved outcomes, "+st.cp+"% confirmed correct",st.pending+" outcomes waiting for approval","Historical replay of an archived NCMRWF cycle, not a live feed"];
   var html=items.map(function(x){return "<span>"+esc(x)+"</span>"}).join('<i class="vsep">|</i>');
   $$("#ticker .tk-c").forEach(function(e){e.innerHTML=html});
 }
@@ -1466,7 +1603,7 @@ function ovAdmin(){
   ]);
   var cnt=ROLE_KEYS.map(function(k){return S.users.filter(function(x){return x.role===k}).length}),mx=Math.max.apply(null,cnt)||1;
   var bars='<ul class="dist">'+ROLE_KEYS.map(function(k,i){return '<li><span>'+ROLES[k].label+'</span><span class="dbar"><i style="width:'+(cnt[i]/mx*100)+'%;background:'+ROLES[k].color+'"></i></span><b>'+cnt[i]+'</b></li>'}).join("")+'</ul>';
-  h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Users by role</h2>'+bars+'<div class="acts"><a class="btn" href="#/admin">Manage users</a></div></div><div class="panel"><h2 class="ph">Retraining</h2><p>Approved outcomes ready: <b>'+st.total+'</b>. Waiting for approval: <b>'+st.pending+'</b>.</p><div class="rt-track rt-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i class="rt-bar"></i></div><p class="rt-stage" role="status">Not running</p><div class="acts"><button type="button" class="btn rt-btn" data-act="retrain">Start retraining</button></div><p class="note">Simulated in this prototype. Retraining uses approved outcomes only.</p></div></div>';
+  h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Users by role</h2>'+bars+'<div class="acts"><a class="btn" href="#/admin">Manage users</a></div></div><div class="panel"><h2 class="ph">Retraining</h2><p>Approved outcomes ready: <b>'+st.total+'</b>. Waiting for approval: <b>'+st.pending+'</b>.</p><div class="rt-track rt-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i class="rt-bar"></i></div><p class="rt-stage" role="status">Not running</p><div class="acts"><button type="button" class="btn rt-btn" data-act="retrain">Start retraining</button></div><p class="note">Trains a real model on approved outcomes only, on a background job. This can take a few minutes.</p></div></div>';
   var recent=S.audit.slice(0,6);
   h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Recent administrative actions</h2>'+(recent.length?'<ul class="audit">'+recent.map(function(a){return '<li><span class="n">'+a.t+'</span><span><b>'+esc(a.by)+'</b></span><span>'+esc(a.a)+'</span></li>'}).join("")+'</ul>':'<p>No actions recorded yet.</p>')+'</div><div class="panel"><h2 class="ph">Bust definition in force</h2><p>A forecast counts as a bust when its error is at least <b>'+S.settings.thr+' mm</b> or the regional <b>'+S.settings.pct+'th</b> percentile of past errors, whichever is larger, and the rain category is wrong.</p><div class="acts"><a class="btn o" href="#/admin">Change the definition</a><a class="btn o" href="#/sources">See how labels are made</a></div></div></div>';
   return h;
@@ -1489,11 +1626,11 @@ function ovObserver(D){
 }
 function paintOverview(){
   if(!S.user)return;
-  var role=S.user.role,D=calc(S.day),dr=dayRole();
+  var role=S.user.role,D=calcReal(S.day),dr=dayRole();
   $("#ov-h").textContent=t("ws_"+role);
   $("#ov-days").hidden=!dr;$("#ticker").hidden=!dr;
   if(dr){paintDays();paintTicker(D)}
-  var lead={duty:"Your shift briefing for the 00Z cycle of 28 September 2026.",senior:"Outcomes waiting for your review, and how the team is recording them.",admin:"Users, retraining and the bust definition, in one place.",observer:"A read-only briefing for the 00Z cycle of 28 September 2026."};
+  var lead={duty:"Your shift briefing for the "+cycleLabel()+".",senior:"Outcomes waiting for your review, and how the team is recording them.",admin:"Users, retraining and the bust definition, in one place.",observer:"A read-only briefing for the "+cycleLabel()+"."};
   $("#ov-lead").textContent=lead[role];
   $("#ov-body").innerHTML=role==="duty"?ovDuty(D):role==="senior"?ovSenior():role==="admin"?ovAdmin():ovObserver(D);
   countBlocks($("#ov-body"));
@@ -1502,10 +1639,11 @@ function paintOverview(){
 
 /* ---------- dashboard ---------- */
 function paintDash(){
-  var D=calc(S.day);
+  var D=calcReal(S.day);
   if(!S.picked||S.sel==null)S.sel=topOf(D).s.id;
   var conf=S.mapMode==="conf";
   mapDash.paint(D,S.mapMode,S.sel,function(d){return S.evF!=="all"&&d.ev!==S.evF});
+  $("#dash-lead").textContent="Bust-risk guidance for the "+cycleLabel()+". Select a subdivision to see why it is flagged and what to do.";
   $("#dm-h").textContent=(conf?"Forecast confidence map, Day ":"Bust-risk map, Day ")+S.day;
   $("#lg-dash").innerHTML=legendHtml(conf?"conf":"bust");
   $("#dm-expl").textContent=conf?"Forecast confidence is 100% minus the bust probability. It shows how far to trust the issued forecast. It is separate from model self-confidence.":"Bust probability is the chance that the issued forecast will be badly wrong.";
@@ -1521,15 +1659,20 @@ function paintDash(){
   $("#s-band").textContent=d.t.band;
   $("#s-fc").textContent=d.fc+"% ("+d.t.word+")";
   $("#s-ev").textContent=d.ev?d.ev:"None expected";
-  $("#s-conf").textContent=d.conf+"% ("+d.v.lab.toLowerCase()+")"+(d.u>=.55?", "+REASONS[s.seed%REASONS.length].toLowerCase():"");
+  $("#s-conf").textContent=d.conf+"% ("+d.v.lab.toLowerCase()+")"+(d.u>=.55&&d.reason?", "+d.reason.toLowerCase():"");
   $("#s-act").textContent=d.t.act;
-  $("#s-fac").innerHTML=[0,1,2].map(function(k){
-    var name=FACTORS[(s.seed+k*3+S.day)%FACTORS.length],mag=6+Math.floor(pseudo(s.seed+k,S.day)*14);
-    var up=k===0?true:pseudo(s.seed*1.7+k,S.day*2.3)>.35;
-    return '<li>'+esc(name)+'<div class="fr"><span class="fb"><i style="width:'+Math.min(100,mag*4)+'%;background:'+(up?"#FFB4A8":"#9CC9FF")+'"></i></span><span class="fv">'+(up?"+":"-")+mag+'%</span></div></li>';
-  }).join("");
-  var a=ANALOGS[(s.seed+S.day)%ANALOGS.length];
-  $("#s-an").textContent=a.date+", "+a.desc+". Outcome: "+a.outcome+".";
+  $("#s-fac").innerHTML='<li>Loading...</li>';
+  $("#s-an").textContent="Loading...";
+  var selDay=S.day,selCode=s.code;
+  loadSelDetail(selDay,selCode).then(function(ex){
+    if(S.day!==selDay||!S.sel||byId(D,S.sel).s.code!==selCode)return; // superseded by a later selection
+    $("#s-fac").innerHTML=ex.factors.map(function(f){
+      var up=f.direction==="raises",mag=Math.round(f.contribution_percent);
+      return '<li>'+esc(f.feature)+'<div class="fr"><span class="fb"><i style="width:'+Math.min(100,mag*4)+'%;background:'+(up?"#FFB4A8":"#9CC9FF")+'"></i></span><span class="fv">'+(up?"+":"-")+mag+'%</span></div></li>';
+    }).join("");
+    var a=ex.closest_analog;
+    $("#s-an").textContent=a.date+", "+a.description+". Outcome: "+a.outcome+".";
+  }).catch(function(){$("#s-fac").innerHTML='<li>Could not load factors from the backend.</li>';$("#s-an").textContent="Could not load the closest historical case."});
   $("#rank-h").textContent="Highest bust risk, Day "+S.day;
   $("#rank").innerHTML=D.slice().sort(function(x,y){return y.b-x.b}).slice(0,8).map(function(x,i){
     return '<li><button type="button" class="rk'+(S.sel===x.s.id?" on":"")+'" data-id="'+x.s.id+'"><span class="rn">'+(i+1)+'</span><span class="rname">'+esc(x.s.name)+'</span><span class="rbar"><i style="width:'+x.pct+'%;background:'+x.t.bg+'"></i></span><span class="rv">'+x.pct+'%</span></button></li>';
@@ -1561,27 +1704,34 @@ function paintOutcomeButtons(){
   if(!ok){m._busy=false;m.textContent=""}
   else if(!m._busy)m.textContent="";
 }
-function addEntry(o){
-  var e={id:S.nextFb++,date:"28 Sep 2026",region:o.region,leadDay:o.leadDay,predicted:o.predicted,outcome:o.outcome,by:S.user.name,status:"pending",note:o.note||"",fresh:true};
-  S.fb.unshift(e);
-  audit("Recorded a "+OCLAB[o.outcome].toLowerCase()+" outcome for "+o.region+", Day "+o.leadDay);
-  return e;
+function addEntry(o,cb){
+  apiFetch("/api/v1/outcomes",{method:"POST",body:{subdivision:o.code,lead_day:o.leadDay,outcome:o.outcome,note:o.note||null,cycle:cycleDate()}})
+    .then(function(){return loadOutcomes()})
+    .then(function(){
+      if(S.fb.length)S.fb[0].fresh=true;
+      cb&&cb(null);
+    })
+    .catch(function(err){cb&&cb(err)});
 }
 function record(oc){
   if(!can("record"))return;
   touch();
-  var d=byId(calc(S.day),S.sel);
-  addEntry({region:d.s.name,leadDay:S.day,predicted:d.pct,outcome:oc});
-  var m=$("#ocmsg");m._busy=true;
-  m.textContent="Recorded: "+OCLAB[oc].toLowerCase()+" for "+d.s.name+", Day "+S.day+". It is waiting for senior approval.";
-  setTimeout(function(){m._busy=false;paintOutcomeButtons()},3500);
+  var d=byId(calcReal(S.day),S.sel);
+  var m=$("#ocmsg");m._busy=true;m.textContent="Recording...";
+  addEntry({code:d.s.code,leadDay:S.day,outcome:oc},function(err){
+    m._busy=false;
+    if(err){m.textContent="Could not record this outcome: "+err.message;paintOutcomeButtons();return}
+    m.textContent="Recorded: "+OCLAB[oc].toLowerCase()+" for "+d.s.name+", Day "+S.day+". It is waiting for senior approval.";
+    setTimeout(function(){m._busy=false;paintOutcomeButtons()},3500);
+    paintFbCharts();if(S.route==="feedback")paintFbAll();if(S.route==="overview")paintOverview();
+  });
   paintDash();
 }
 
 /* ---------- regions ---------- */
 function paintRegions(){
   paintDays();
-  var D=calc(S.day);
+  var D=calcReal(S.day);
   $("#rg-tabs").innerHTML=RG.map(function(r){return '<button type="button" role="tab" class="tab" data-r="'+r.k+'" aria-selected="'+(S.region===r.k)+'">'+r.name+'</button>'}).join("");
   $$("#rg-tabs .tab").forEach(function(b){b.addEventListener("click",function(){S.region=b.dataset.r;paintRegions()})});
   var r=RG.filter(function(x){return x.k===S.region})[0];
@@ -1599,7 +1749,7 @@ function paintRegions(){
 /* ---------- model trust ---------- */
 function trendSvg(s,day){
   var W=300,H=130,L=26,R=8,T=10,B=22,pts=[];
-  for(var d=1;d<=10;d++){var c=Math.round((1-uFor(s.seed,d))*100);pts.push({d:d,c:c,x:L+(W-L-R)*(d-1)/9,y:T+(H-T-B)*(1-c/100)})}
+  for(var d=1;d<=10;d++){var c=byId(calcReal(d),s.id).conf;pts.push({d:d,c:c,x:L+(W-L-R)*(d-1)/9,y:T+(H-T-B)*(1-c/100)})}
   var path=pts.map(function(p,i){return (i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)}).join(" ");
   var g=[0,50,100].map(function(v){var y=T+(H-T-B)*(1-v/100);return '<line class="ax" x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/><text x="2" y="'+(y+3)+'">'+v+'</text>'}).join("");
   var lab=pts.map(function(p){return '<text x="'+p.x.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">D'+p.d+'</text>'}).join("");
@@ -1609,7 +1759,7 @@ function trendSvg(s,day){
 }
 function paintTrust(){
   paintDays();
-  var D=calc(S.day);
+  var D=calcReal(S.day);
   mapTrust.paint(D,"trust",S.trSel);
   $("#tm-h").textContent="Model confidence map, Day "+S.day;
   $("#lg-trust").innerHTML=legendHtml("trust");
@@ -1624,7 +1774,7 @@ function paintTrust(){
   $("#trend-n").textContent="Lowest model self-confidence for this subdivision is "+tr.lo.c+"% on Day "+tr.lo.d+". The ring marks Day "+S.day+". "+(S.trSel==null?"Select a subdivision on the map to change this chart.":"");
   $("#tr-h").textContent="Lowest model confidence, Day "+S.day;
   $("#tr-body").innerHTML=D.slice().sort(function(a,b){return b.u-a.u}).slice(0,8).map(function(d){
-    return '<tr data-id="'+d.s.id+'"><td>'+esc(d.s.name)+'</td><td class="n">'+d.conf+'%</td><td>'+REASONS[d.s.seed%REASONS.length]+'</td></tr>';
+    return '<tr data-id="'+d.s.id+'"><td>'+esc(d.s.name)+'</td><td class="n">'+d.conf+'%</td><td>'+esc(d.reason||"")+'</td></tr>';
   }).join("");
   $$("#tr-body tr").forEach(function(tr2){
     var id=+tr2.dataset.id;
@@ -1633,7 +1783,7 @@ function paintTrust(){
     tr2.addEventListener("click",function(){S.trSel=id;paintTrust()});
   });
   var cap=$("#tr-cap");
-  if(S.trSel!=null){var d=byId(D,S.trSel);cap.textContent=d.s.name+": model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()+". "+(d.u>=.55?"Main reason: "+REASONS[d.s.seed%REASONS.length].toLowerCase()+".":"Enough historical precedent exists for this pattern.")}
+  if(S.trSel!=null){var d=byId(D,S.trSel);cap.textContent=d.s.name+": model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()+". "+(d.u>=.55&&d.reason?"Main reason: "+d.reason.toLowerCase()+".":"Enough historical precedent exists for this pattern.")}
   else cap.textContent="Select a subdivision to see its model self-confidence and the main reason.";
 }
 function trustHover(id,on){
@@ -1708,17 +1858,19 @@ function paintFbTable(){
 }
 function recPred(){
   var s=SUBS.filter(function(x){return x.id===+$("#rec-s").value})[0],day=+$("#rec-d").value;
-  var d=byId(calc(day),s.id);
+  var d=byId(calcReal(day),s.id);
   $("#rec-pred").textContent="Predicted bust probability for "+s.name+" on Day "+day+": "+d.pct+"% ("+d.t.lab+"). This value is saved with the entry.";
 }
 function reviewEntry(id,doWhat){
   var e=S.fb.filter(function(r){return r.id===id})[0];
-  if(!e||!can("approve")||e.status!=="pending"||e.by===S.user.name)return;
-  e.status=doWhat==="approve"?"approved":"rejected";e.rev=S.user.name;
-  audit((doWhat==="approve"?"Approved":"Rejected")+" the outcome for "+e.region+", Day "+e.leadDay+", recorded by "+e.by);
-  paintFbCharts();paintFbAll();
-  if(S.route==="overview")paintOverview();
-  notice((doWhat==="approve"?"Approved":"Rejected")+": "+e.region+", Day "+e.leadDay+".");
+  if(!e||!can("approve")||e.status!=="pending"||e.byId===S.user.id)return;
+  apiFetch("/api/v1/outcomes/"+id+"/review",{method:"POST",body:{decision:doWhat}}).then(function(){
+    return loadOutcomes();
+  }).then(function(){
+    paintFbCharts();paintFbAll();
+    if(S.route==="overview")paintOverview();
+    notice((doWhat==="approve"?"Approved":"Rejected")+": "+e.region+", Day "+e.leadDay+".");
+  }).catch(function(err){notice("Could not review this outcome: "+err.message)});
 }
 
 /* ---------- administration ---------- */
@@ -1746,17 +1898,38 @@ function paintRetrain(){
 function startRetrain(){
   if(S.retrain.running)return;
   var n=fbStats().total;
-  S.retrain={running:true,pct:0,stage:STAGES[0],n:n};
-  audit("Started retraining (simulated) using "+n+" approved outcomes");
-  var t0=Date.now(),dur=RM?600:5000;
-  clearInterval(retrainTimer);
-  retrainTimer=setInterval(function(){
-    var p=Math.min(100,Math.round((Date.now()-t0)/dur*100));
-    S.retrain.pct=p;S.retrain.stage=STAGES[Math.min(3,Math.floor(p/25))];
-    if(p>=100){clearInterval(retrainTimer);S.retrain.running=false;S.retrain.stage="Completed (simulated)";audit("Retraining completed (simulated)")}
-    paintRetrain();
-  },100);
+  S.retrain={running:true,pct:2,stage:STAGES[0],n:n};
   paintRetrain();
+  apiFetch("/api/v1/retraining",{method:"POST"}).then(function(job){
+    loadAdminExtras().then(paintAudit);
+    pollRetrain(job.job_id);
+  }).catch(function(err){
+    S.retrain={running:false,pct:0,stage:"Not running",n:n};
+    paintRetrain();
+    notice("Could not start retraining: "+err.message);
+  });
+}
+function pollRetrain(jobId){
+  clearInterval(retrainTimer);
+  var stageIdx=0;
+  retrainTimer=setInterval(function(){
+    apiFetch("/api/v1/retraining/"+jobId).then(function(row){
+      if(row.status==="running"){stageIdx=Math.min(3,stageIdx+1);S.retrain.pct=Math.min(90,20+stageIdx*20);S.retrain.stage=STAGES[stageIdx]}
+      else if(row.status==="done"){
+        clearInterval(retrainTimer);S.retrain.running=false;S.retrain.pct=100;S.retrain.stage="Completed";
+        notice("Retraining completed.");
+        loadAdminExtras().then(paintAudit);
+      }else if(row.status==="failed"){
+        clearInterval(retrainTimer);S.retrain.running=false;S.retrain.stage="Failed: "+(row.error||"unknown error");
+        notice("Retraining failed: "+(row.error||"unknown error"));
+        loadAdminExtras().then(paintAudit);
+      }
+      paintRetrain();
+    }).catch(function(err){
+      clearInterval(retrainTimer);S.retrain.running=false;S.retrain.stage="Not running";paintRetrain();
+      notice("Lost contact while checking retraining status: "+err.message);
+    });
+  },1500);
 }
 
 /* ---------- methodology and sources ---------- */
@@ -1846,6 +2019,7 @@ function wire(){
   mapTrust=makeMap($("#carto-trust"),true,function(id){S.trSel=id;paintTrust()},trustHover);
   $("#ev-f").innerHTML='<option value="all">All weather events</option>'+EVENTS.map(function(e){return '<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>'}).join("");
   $("#ev-f").addEventListener("change",function(){touch();S.evF=$("#ev-f").value;paintDash()});
+  $("#cycle-pick").addEventListener("change",function(){switchCycle($("#cycle-pick").value)});
   $("#api-day").innerHTML=[1,2,3,4,5,6,7,8,9,10].map(function(d){return '<option value="'+d+'"'+(d===3?' selected':'')+'>Day '+d+'</option>'}).join("");
   $("#api-day").addEventListener("change",paintApi);
   buildDays();
@@ -1889,13 +2063,24 @@ function wire(){
   $("#q").addEventListener("input",function(){$("#q").setCustomValidity("")});
   $("#lform").addEventListener("submit",function(e){
     e.preventDefault();
-    var id=$("#uid").value.trim().toLowerCase(),pw=$("#pw").value,u=findUser(id);
-    if(!u||pw!==PW){$("#lerr").textContent="User ID or password is incorrect. Use one of the demo accounts shown on this page.";$("#pw").value="";$("#pw").focus();return}
-    if(!u.active){$("#lerr").textContent="This account is deactivated. Ask an administrator to reactivate it.";$("#pw").value="";return}
-    $("#lerr").textContent="";S.user=u;saveSession();resetFb();S.touched=false;
-    $("#uid").value="";$("#pw").value="";
-    paintUser();
-    var n=S.next||"overview";S.next=null;nav(n);
+    var id=$("#uid").value.trim().toLowerCase(),pw=$("#pw").value,btn=$("#lform button[type=submit]");
+    $("#lerr").textContent="";btn.disabled=true;btn.textContent="Signing in...";
+    apiFetch("/api/v1/auth/login",{method:"POST",body:{id:id,password:pw}}).then(function(res){
+      S.user={id:res.id,name:res.name,role:res.role};S.token=res.token;
+      saveSession();resetFb();S.touched=false;
+      $("#uid").value="";$("#pw").value="";
+      btn.textContent="Sign in";
+      $("#lerr").textContent="Loading the "+cycleLabel()+"...";
+      return afterSignIn();
+    }).then(function(){
+      btn.disabled=false;$("#lerr").textContent="";
+      paintUser();
+      var n=S.next||"overview";S.next=null;nav(n);
+    }).catch(function(err){
+      btn.disabled=false;btn.textContent="Sign in";
+      $("#lerr").textContent=err.status===401?"User ID or password is incorrect. Use one of the demo accounts shown on this page.":("Could not reach the backend: "+err.message);
+      $("#pw").value="";$("#pw").focus();
+    });
   });
   $$("[data-demo]").forEach(function(b){b.addEventListener("click",function(){
     var id=b.dataset.demo;$("#uid").value=id;$("#pw").value=PW;
@@ -1904,42 +2089,61 @@ function wire(){
   $("#rec-s").addEventListener("change",recPred);$("#rec-d").addEventListener("change",recPred);
   $("#rec-form").addEventListener("submit",function(e){
     e.preventDefault();if(!can("record"))return;
-    var s=SUBS.filter(function(x){return x.id===+$("#rec-s").value})[0],day=+$("#rec-d").value,d=byId(calc(day),s.id);
-    addEntry({region:s.name,leadDay:day,predicted:d.pct,outcome:$("#rec-o").value,note:$("#rec-n").value.trim()});
-    $("#rec-n").value="";
-    $("#rec-msg").textContent="Recorded for "+s.name+", Day "+day+". It is waiting for senior approval.";
-    setTimeout(function(){$("#rec-msg").textContent=""},4000);
-    paintFbCharts();paintFbAll();
+    var s=SUBS.filter(function(x){return x.id===+$("#rec-s").value})[0],day=+$("#rec-d").value;
+    var note=$("#rec-n").value.trim(),outcome=$("#rec-o").value;
+    $("#rec-msg").textContent="Recording...";
+    addEntry({code:s.code,leadDay:day,outcome:outcome,note:note},function(err){
+      if(err){$("#rec-msg").textContent="Could not record this outcome: "+err.message;return}
+      $("#rec-n").value="";
+      $("#rec-msg").textContent="Recorded for "+s.name+", Day "+day+". It is waiting for senior approval.";
+      setTimeout(function(){$("#rec-msg").textContent=""},4000);
+      paintFbCharts();paintFbAll();
+    });
   });
   recPred();
   $("#ad-users").addEventListener("change",function(e){
     var sel=e.target.closest("select[data-role-for]");if(!sel||!S.user||S.user.role!=="admin")return;
     var u=findUser(sel.dataset.roleFor);if(!u||u.id===S.user.id)return;
-    var old=u.role;u.role=sel.value;audit("Changed the role of "+u.name+" from "+ROLES[old].label.toLowerCase()+" to "+ROLES[u.role].label.toLowerCase());paintAdmin();
+    var old=u.role;sel.disabled=true;
+    apiFetch("/api/v1/users/"+u.id,{method:"PATCH",body:{role:sel.value}}).then(function(){
+      return loadAdminExtras();
+    }).then(function(){paintAdmin();notice("Changed "+u.name+"'s role from "+ROLES[old].label.toLowerCase()+" to "+ROLES[sel.value].label.toLowerCase()+".")})
+    .catch(function(err){sel.value=old;sel.disabled=false;notice("Could not change the role: "+err.message)});
   });
   $("#ad-users").addEventListener("click",function(e){
     var b=e.target.closest("[data-toggle]");if(!b||!S.user||S.user.role!=="admin")return;
     var u=findUser(b.dataset.toggle);if(!u||u.id===S.user.id)return;
-    u.active=!u.active;audit((u.active?"Reactivated ":"Deactivated ")+"the account of "+u.name);paintAdmin();
+    b.disabled=true;
+    apiFetch("/api/v1/users/"+u.id,{method:"PATCH",body:{active:!u.active}}).then(function(){
+      return loadAdminExtras();
+    }).then(function(){paintAdmin();notice((u.active?"Reactivated ":"Deactivated ")+u.name+".")})
+    .catch(function(err){b.disabled=false;notice("Could not update this account: "+err.message)});
   });
   $("#au-form").addEventListener("submit",function(e){
     e.preventDefault();if(!S.user||S.user.role!=="admin")return;
     var id=$("#au-id").value.trim().toLowerCase(),nm=$("#au-name").value.trim(),role=$("#au-role").value,m=$("#au-msg");
     if(!/^[a-z][a-z0-9]{2,19}$/.test(id)){m.textContent="User ID must start with a letter and use 3 to 20 lowercase letters or digits.";return}
     if(!nm){m.textContent="Enter the person's name.";return}
-    if(findUser(id)){m.textContent="That user ID already exists. Choose another.";return}
-    S.users.push({id:id,name:nm,role:role,active:true});
-    audit("Added user "+nm+" ("+id+") as "+ROLES[role].label.toLowerCase());
-    m.textContent="";$("#au-id").value="";$("#au-name").value="";paintAdmin();notice("Added "+nm+". They can sign in with the demo password.");
+    m.textContent="Adding...";
+    apiFetch("/api/v1/users",{method:"POST",body:{id:id,name:nm,role:role}}).then(function(){
+      return loadAdminExtras();
+    }).then(function(){
+      m.textContent="";$("#au-id").value="";$("#au-name").value="";paintAdmin();notice("Added "+nm+". They can sign in with the demo password.");
+    }).catch(function(err){m.textContent=err.status===409?"That user ID already exists. Choose another.":err.message});
   });
   $("#st-form").addEventListener("submit",function(e){
     e.preventDefault();if(!S.user||S.user.role!=="admin")return;
     var thr=parseInt($("#st-thr").value,10),pct=parseInt($("#st-pct").value,10),m=$("#st-msg");
     if(!(thr>=1&&thr<=500)){m.textContent="The error threshold must be between 1 and 500 mm.";return}
     if(!(pct>=50&&pct<=99)){m.textContent="The regional percentile must be between 50 and 99.";return}
-    S.settings={thr:thr,pct:pct};m.textContent="";
-    audit("Saved the bust definition: error of at least "+thr+" mm or the regional "+pct+"th percentile");
-    notice("Saved. The new values apply from the next retraining run.");
+    m.textContent="Saving...";
+    apiFetch("/api/v1/settings/bust-definition",{method:"PUT",body:{error_threshold_mm:thr,regional_percentile:pct}}).then(function(res){
+      S.settings={thr:res.error_threshold_mm,pct:res.regional_percentile};m.textContent="";
+      return loadAdminExtras();
+    }).then(function(){
+      paintAudit();
+      notice("Saved. The new values apply from the next retraining run.");
+    }).catch(function(err){m.textContent="Could not save the bust definition: "+err.message});
   });
   $("#p-prev").addEventListener("click",function(){if(S.pipe>0){S.pipe--;paintPipe()}});
   $("#p-next").addEventListener("click",function(){if(S.pipe<PIPE.length-1){S.pipe++;paintPipe()}});
@@ -1957,7 +2161,12 @@ function wire(){
   })});
 }
 
-loadSession();wire();paintUser();onRoute(true);
+loadSession();wire();
+if(S.user&&S.token){
+  afterSignIn().then(function(){paintUser();onRoute(true)}).catch(function(){signOut();paintUser();onRoute(true)});
+}else{
+  paintUser();onRoute(true);
+}
 window.__vishwas={S:S,calc:calc,nav:nav,onRoute:onRoute,fbStats:fbStats};
 })();
 </script>
