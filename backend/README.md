@@ -56,14 +56,23 @@ status polling, and CORS preflight.
 live server instead of TestClient -- useful for a from-scratch sanity check,
 not part of the committed suite.
 
-**Retraining mutates `ml/models/<source>/` on disk** (that's the point -- it's
-a real `train_pipeline` run, not a stub). After running the retraining test
-or exercising it manually, restore the committed model bundle before
-committing anything else:
+**Retraining never touches `ml/models/`.** A run writes its bundle to
+`backend/runtime_models/<source>/` (gitignored; override with
+`VISHWAS_RUNTIME_MODELS`), staged in a temporary folder and swapped in only
+when complete. The service then loads that bundle in preference to the
+committed baseline in `ml/models/<source>/`. Delete the runtime folder to go
+back to the baseline. The tests point `VISHWAS_RUNTIME_MODELS` at a temp
+directory and assert with `git status` that `ml/models/` is unchanged.
+(Earlier versions retrained in place, so every test run rewrote committed
+model files.)
 
-```bash
-git checkout -- ml/models/
-```
+**What a retraining run does:**
+1. `train_pipeline` with the admin's saved bust definition.
+2. Recalibration from **approved** forecaster outcomes (`vishwas_ml.feedback.recalibrate`). It's applied only when there are at least `feedback.min_outcomes` (50) usable approved outcomes; otherwise the job result says `"status": "skipped: not enough approved outcomes"`.
+
+The job's `metrics.recalibration` field reports which happened. (Earlier
+versions reported `approved_outcomes_used` without passing the outcomes to
+the model at all.)
 
 ## Design choices
 
@@ -121,12 +130,16 @@ illustrative data everywhere else.
 
 ## Known limitations (stated here, not smoothed over)
 
-- The model itself: no skill gain over climatology at lead days 1-3, catches
-  roughly 30% of magnitude busts, weakest on Coastal Karnataka and Kerala.
+- The model itself: at lead days 1-3 it is no better than the forecast amount
+  alone (it still beats climatology at every lead), it catches roughly 30% of
+  magnitude busts, and it is weakest on Coastal Karnataka and Kerala.
   See `ml/README.md` for the full honest accounting -- the backend passes
   every prediction through unchanged, it doesn't add or remove caveats.
   Demo copy in the frontend states this plainly rather than smoothing it
   over.
+- User roles are read from the database on every request, not from the
+  token, so an admin's role change or deactivation applies immediately to
+  tokens already issued.
 - `vishwas.db` is a single SQLite file with no backup/migration story --
   fine for a hackathon demo, not for production.
 - Login tokens are 12-hour JWTs signed with a hardcoded demo secret

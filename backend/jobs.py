@@ -3,16 +3,28 @@ Python thread and returns immediately (202); GET /api/v1/retraining/{job_id}
 polls status. A single global flag (not per-source) keeps this simple and
 matches the API page's single 409 "already in progress" error -- fine for
 a one-process hackathon demo.
+
+A run does two things, in order:
+  1. train_pipeline(cfg) with the admin's saved bust definition, written to the
+     runtime model folder (service_registry.runtime_dir), never to ml/models/.
+  2. recalibration from approved forecaster outcomes (vishwas_ml.feedback):
+     applied only when there are enough of them (config feedback.min_outcomes);
+     the job result says whether it was applied or skipped and why.
 """
 import json
-import sys
 import os
+import shutil
+import sys
 import threading
 import uuid
 
+import pandas as pd
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml"))
-from vishwas_ml.pipeline import train_pipeline  # noqa: E402
 from vishwas_ml.config import load_config  # noqa: E402
+from vishwas_ml.feedback import recalibrate  # noqa: E402
+from vishwas_ml.model import BustModel  # noqa: E402
+from vishwas_ml.pipeline import train_pipeline  # noqa: E402
 
 import db
 import service_registry
@@ -47,18 +59,48 @@ def start_job(source: str, approved_outcomes_used: int, bust_overrides: dict | N
     return job_id
 
 
+def _approved_outcomes() -> pd.DataFrame:
+    conn = db.get_conn()
+    rows = conn.execute("SELECT predicted_bust_probability, outcome, status FROM outcomes "
+                        "WHERE status = 'approved'").fetchall()
+    conn.close()
+    return pd.DataFrame([dict(r) for r in rows],
+                        columns=["predicted_bust_probability", "outcome", "status"])
+
+
 def _run(job_id: str, source: str, bust_overrides: dict | None):
     global _running
     conn = db.get_conn()
     conn.execute("UPDATE retraining_jobs SET status = 'running' WHERE job_id = ?", (job_id,))
     conn.commit()
+    staging = None
     try:
         cfg = load_config(source=source)
         if bust_overrides:
             cfg["bust"] = {**cfg.get("bust", {}), **bust_overrides}
-        result = train_pipeline(cfg)
+        target = service_registry.runtime_dir(source)
+        staging = target.with_name(target.name + f".{job_id}.tmp")
+        if staging.exists():
+            shutil.rmtree(staging)
+        result = train_pipeline(cfg, out_dir=staging, log=lambda *a: None)
+
+        model = BustModel.load(staging)
+        rc, recal = recalibrate(model, _approved_outcomes(),
+                                pd.read_parquet(staging / "calibration_set.parquet"), cfg["feedback"])
+        if rc is not None:
+            model.recalibrator = rc
+            model.metadata["recalibration"] = recal
+            model.save(staging)
+
+        # swap the finished bundle in only once it is complete
+        if target.exists():
+            shutil.rmtree(target)
+        staging.rename(target)
+        staging = None
+
         overall = result["metrics"]["overall"]["model"]
         summary = {k: (float(v) if isinstance(v, (int, float)) else v) for k, v in overall.items()}
+        summary["recalibration"] = recal
         conn.execute(
             "UPDATE retraining_jobs SET status = 'done', finished_at = ?, metrics_json = ? WHERE job_id = ?",
             (db.now_iso(), json.dumps(summary), job_id),
@@ -73,6 +115,8 @@ def _run(job_id: str, source: str, bust_overrides: dict | None):
         conn.commit()
     finally:
         conn.close()
+        if staging is not None and staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
         with _state_lock:
             _running = False
 

@@ -604,7 +604,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
         <div class="carto" id="carto-dash"></div>
         <ul class="lg" id="lg-dash"></ul>
         <p class="note" id="dm-expl"></p>
-        <p class="note">Illustrative data, not connected to a live feed.</p>
+        <p class="note">Model output for the selected cycle: a replay of NCMRWF's S2S reforecast archive (1993 to 2015), not a live feed.</p>
       </div>
       <aside class="panel sel-card" aria-label="Selected subdivision">
         <h2 class="ph">Selected subdivision</h2>
@@ -931,7 +931,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       <p>Prototype built for Smart India Hackathon 2026, Problem Statement 26079: AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts.</p>
     </div>
   </div>
-  <div class="wrap foot-b">Last reviewed: 28 September 2026<i class="vsep">|</i>Illustrative data, not connected to a live feed</div>
+  <div class="wrap foot-b">Last reviewed: 30 September 2026<i class="vsep">|</i>Signed-in pages: model output replaying NCMRWF's 1993 to 2015 reforecast archive, not a live feed. Landing page and API samples: illustrative data.</div>
 </footer>
 
 <script>
@@ -1185,25 +1185,32 @@ function mergeToD(cmItems,trustItems){
     return {s:s,b:x.bust_probability,pct:pct,fc:fc,t:t,u:u,conf:conf,v:v,ev:x.weather_event||null,reason:tr?tr.reason:null};
   });
 }
-function loadDay(day){
-  var key=rKey(day);
-  if(RCACHE[key])return Promise.resolve(RCACHE[key]);
-  var c=cycleDate();
+function loadDay(day,c,cache){
   return Promise.all([
     apiFetch("/api/v1/confidence-map?lead_day="+day+"&cycle="+encodeURIComponent(c)),
     apiFetch("/api/v1/model-trust?lead_day="+day+"&cycle="+encodeURIComponent(c))
   ]).then(function(res){
     var D=mergeToD(res[0].items,res[1].items);
-    RCACHE[key]=D;
+    cache[c+"|"+day]=D;
     return D;
   });
 }
-function preloadCycle(){
-  RCACHE={};SEL_CACHE={};
+/* Loads all 10 lead days of a cycle into a NEW cache and only swaps it in once every day
+   has arrived, so a failed or partial load never leaves the workspace without real data. */
+function preloadCycle(cycle){
+  var c=(cycle||S.cycle).split("T")[0],fresh={};
   var days=[1,2,3,4,5,6,7,8,9,10];
-  return Promise.all(days.map(loadDay));
+  return Promise.all(days.map(function(d){return loadDay(d,c,fresh)})).then(function(){
+    RCACHE=fresh;SEL_CACHE={};
+  });
 }
-function calcReal(day){return RCACHE[rKey(day)]||calc(day)}
+/* Model output only. The illustrative calc() sample is for the landing and API pages; it must
+   never stand in for the model inside the signed-in workspace. */
+function calcReal(day){
+  var D=RCACHE[rKey(day)];
+  if(!D)throw new Error("No model output loaded for Day "+day+" of the "+cycleLabel()+".");
+  return D;
+}
 function loadSelDetail(day,code){
   var key=rKey(day)+"|"+code;
   if(SEL_CACHE[key])return Promise.resolve(SEL_CACHE[key]);
@@ -1244,7 +1251,7 @@ function loadAdminExtras(){
 }
 function afterSignIn(){
   return loadCycles()
-    .then(preloadCycle)
+    .then(function(){return preloadCycle(S.cycle)})
     .then(loadOutcomes)
     .then(loadAdminExtras);
 }
@@ -1367,16 +1374,23 @@ function paintCyclePick(){
 }
 function switchCycle(cycle){
   if(cycle===S.cycle)return;
-  S.cycle=cycle;
+  var prev=S.cycle;
   var sel=$("#cycle-pick");if(sel)sel.disabled=true;
-  notice("Loading the "+cycleLabel()+"...");
-  Promise.all([preloadCycle(),loadOutcomes(),loadAdminExtras()]).then(function(){
+  notice("Loading the 00Z cycle of "+fmtDate(cycle.split("T")[0])+"...");
+  preloadCycle(cycle).then(function(){
+    S.cycle=cycle;  // switch only once the new cycle's model output is fully loaded
+    return Promise.all([loadOutcomes(),loadAdminExtras()]);
+  }).then(function(){
     if(sel)sel.disabled=false;
     notice("Loaded the "+cycleLabel()+".");
     var r=S.route;
     if(r==="overview")paintOverview();else if(r==="dashboard")paintDash();else if(r==="regions")paintRegions();
     else if(r==="model-trust")paintTrust();else if(r==="feedback"){paintFbCharts();paintFbAll()}
-  }).catch(function(err){if(sel)sel.disabled=false;notice("Could not load that cycle: "+err.message)});
+  }).catch(function(err){
+    S.cycle=prev;
+    if(sel){sel.disabled=false;sel.value=prev}
+    notice("Could not load that cycle, still showing the "+cycleLabel()+": "+err.message);
+  });
 }
 function paintUser(){
   document.body.classList.toggle("out",!S.user);
@@ -1571,7 +1585,7 @@ function ovDuty(D){
   return h;
 }
 function queueRow(r){
-  var own=r.by===S.user.name;
+  var own=r.byId===S.user.id;
   return '<tr><td>'+esc(r.region)+(r.note?'<small>'+esc(r.note)+'</small>':'')+'</td><td class="n">D'+r.leadDay+'</td><td class="n">'+r.predicted+'%</td><td><span class="pill '+r.outcome+'">'+OCLAB[r.outcome]+'</span></td><td>'+esc(r.by)+'</td><td><button type="button" class="rb" data-fb="'+r.id+'" data-do="approve"'+(own?' disabled title="You cannot review your own entry"':'')+'>Approve</button><button type="button" class="rb" data-fb="'+r.id+'" data-do="reject"'+(own?' disabled title="You cannot review your own entry"':'')+'>Reject</button></td></tr>';
 }
 function ovSenior(){
@@ -1685,7 +1699,7 @@ function paintDash(){
   if(S.user){
     var here=S.fb.filter(function(r){return r.region===s.name});
     if(S.user.role==="senior"){var pn=here.filter(function(r){return r.status==="pending"}).length;hint=pn?("There "+(pn===1?"is 1 outcome":"are "+pn+" outcomes")+" waiting for approval for this subdivision."):"No outcomes are waiting for approval for this subdivision."}
-    else if(S.user.role==="duty"){var mn=here.filter(function(r){return r.by===S.user.name}).length;hint="Your entries for this subdivision: "+mn+"."}
+    else if(S.user.role==="duty"){var mn=here.filter(function(r){return r.byId===S.user.id}).length;hint="Your entries for this subdivision: "+mn+"."}
     else if(S.user.role==="admin")hint="The bust definition in force: an error of at least "+S.settings.thr+" mm.";
     else hint="You are viewing this subdivision in read-only mode."
   }
@@ -1797,7 +1811,7 @@ function fbRows(){
   var rows=S.fb.filter(function(r){
     if(S.fbOutcome!=="all"&&r.outcome!==S.fbOutcome)return false;
     if(S.fbStatus!=="all"&&r.status!==S.fbStatus)return false;
-    if(S.fbMine&&S.user&&r.by!==S.user.name)return false;
+    if(S.fbMine&&S.user&&r.byId!==S.user.id)return false;
     if(q&&(r.region+" "+r.by).toLowerCase().indexOf(q)<0)return false;
     return true;
   });
@@ -1850,7 +1864,7 @@ function paintFbTable(){
     var f=r.fresh;delete r.fresh;
     var act="";
     if(canA){
-      if(r.status==="pending"){var own=r.by===S.user.name;act='<td><button type="button" class="rb" data-fb="'+r.id+'" data-do="approve"'+(own?' disabled title="You cannot review your own entry"':'')+'>Approve</button><button type="button" class="rb" data-fb="'+r.id+'" data-do="reject"'+(own?' disabled title="You cannot review your own entry"':'')+'>Reject</button></td>'}
+      if(r.status==="pending"){var own=r.byId===S.user.id;act='<td><button type="button" class="rb" data-fb="'+r.id+'" data-do="approve"'+(own?' disabled title="You cannot review your own entry"':'')+'>Approve</button><button type="button" class="rb" data-fb="'+r.id+'" data-do="reject"'+(own?' disabled title="You cannot review your own entry"':'')+'>Reject</button></td>'}
       else act='<td>'+(r.rev?'by '+esc(r.rev):'')+'</td>';
     }
     return '<tr'+(f?' class="fresh"':'')+'><td class="n">'+esc(r.date)+'</td><td>'+esc(r.region)+(r.note?'<small>'+esc(r.note)+'</small>':'')+'</td><td class="n">D'+r.leadDay+'</td><td class="n">'+r.predicted+'%</td><td><span class="pill '+r.outcome+'">'+OCLAB[r.outcome]+'</span></td><td>'+esc(r.by)+'</td><td><span class="pill '+r.status+'">'+STLAB[r.status]+'</span></td>'+act+'</tr>';
@@ -1858,6 +1872,7 @@ function paintFbTable(){
 }
 function recPred(){
   var s=SUBS.filter(function(x){return x.id===+$("#rec-s").value})[0],day=+$("#rec-d").value;
+  if(!RCACHE[rKey(day)]){$("#rec-pred").textContent="The predicted bust probability appears here once the forecast cycle has loaded.";return}
   var d=byId(calcReal(day),s.id);
   $("#rec-pred").textContent="Predicted bust probability for "+s.name+" on Day "+day+": "+d.pct+"% ("+d.t.lab+"). This value is saved with the entry.";
 }
