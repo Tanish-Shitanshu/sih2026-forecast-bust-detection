@@ -9,6 +9,7 @@ __pycache__/
 data/raw/
 data/processed/_features_*.parquet
 data/processed/_parts/
+data/processed/bust_dataset.csv
 
 # C extensions
 *.so
