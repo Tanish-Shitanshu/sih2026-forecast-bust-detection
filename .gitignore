@@ -232,3 +232,6 @@ build/
 
 # macOS
 .DS_Store
+
+# Vishwas backend demo database (seeded fresh on first run, see backend/README.md)
+backend/vishwas.db

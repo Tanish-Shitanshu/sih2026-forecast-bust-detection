@@ -1,0 +1,6 @@
+# Backend-only additions on top of ml/requirements.txt (fastapi, uvicorn,
+# httpx are already there). Install into the SAME venv as ml/ -- see
+# backend/README.md for why a separate backend/.venv would just duplicate
+# the whole pandas/lightgbm/shap environment VishwasService needs.
+pyjwt==2.15.1
+bcrypt==5.0.0
