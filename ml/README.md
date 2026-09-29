@@ -111,6 +111,15 @@ The accuracy column shows why accuracy isn't the headline metric: climatology sc
 
 The pipeline handles either source unchanged: an issue cadence of every 8 days (S2S) is fine, and run-to-run change is simply computed against the previous init.
 
+## Known limitations of the NCMRWF S2S source
+
+State these plainly in the write-up and demo.
+- **Which NCMRWF model it is.** The S2S reforecast: NCMRWF's Unified Model coupled system (GC2/GA6, N216 ≈ 60 km), initialized from ERA-Interim, with 4 runs per month (1st, 9th, 17th, 25th), 1993–2015. It is not the operational high-resolution NCUM-G deterministic run forecasters use day to day. It is the same model family, and it is real NCMRWF output.
+- **Resolution vs subdivision averaging.** Averaging over a subdivision removes much of the resolution gap for large inland subdivisions (e.g. W.RJ, J&K, W.MP: 50–60 grid cells each). It removes much less for narrow coastal and hilly ones (Coastal Karnataka: 12 cells, 2 mostly inside; Kerala; Konkan & Goa), where terrain-driven rain is resolution-sensitive. Expect the model's bust estimates to be least transferable there.
+- **Not just resolution.** The model configuration (coupled ocean, model version, ERA-Interim start states) differs from today's operational system, so the error behaviour learned here is a proxy for the operational system's, though a much closer one than GEFS.
+- **Run frequency.** 4 runs a month rather than daily, so fewer rows per year (~4,000) and a weaker run-to-run change feature (only Day 1–2 forecasts have an earlier run covering the same day).
+- **Years.** 1993–2015 only. Live demo rows for 2026 would need the operational NCUM feed, which isn't on the portal.
+
 ## Data questions
 
 1. **ERA5 timing (confirmed by the data team: issue date).** Valid-date reanalysis would leak the outcome. The pipeline still auto-detects the format (`era5_timing: "auto"`); for valid-date data it reads the issue-date state from earlier rows.
