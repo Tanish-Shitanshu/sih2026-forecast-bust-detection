@@ -40,7 +40,7 @@ _STATE_Z = {"mslp": "mslp_z", "surface_pressure": "surface_pressure_z", "dewpoin
 _SMOOTH = 20.0  # pseudo-count shrinking sparse bust-rate cells toward the lead-day rate
 
 
-def issue_state(df, timing):
+def issue_state(df, timing, shift_days=0):
     """Raw ERA5 values at each issue date, one row per (date, subdivision_code).
 
     timing='issue': the table already holds issue-date values (constant across leads).
@@ -57,6 +57,11 @@ def issue_state(df, timing):
     else:
         raise ValueError(f"era5 timing must be 'issue' or 'valid', got {timing!r}")
     st = st.reset_index()
+    if shift_days:
+        # Use the state from `shift_days` earlier: when the table's ERA5 values are daily means /
+        # sums over the issue date, they include hours after a 00Z issue (the Day-1 window).
+        prev = st.assign(date=st["date"] + pd.Timedelta(days=shift_days))
+        st = st[["date", "subdivision_code"]].merge(prev, on=["date", "subdivision_code"], how="left")
     st["wind_speed"] = np.hypot(st["wind_u10"], st["wind_v10"])
     st["dewpoint_depression"] = st["temp_2m"] - st["dewpoint_2m"]
     return st
@@ -82,18 +87,19 @@ def _attach_rate(keys, table, lead_rate):
 
 
 class FeatureBuilder:
-    def __init__(self, meta, bust_cfg, era5_timing="issue"):
+    def __init__(self, meta, bust_cfg, era5_timing="issue", era5_shift_days=0):
         self.region_of = {s["code"]: s["region_key"] for s in meta["subdivisions"]}
         self.region_ids = {r["key"]: i for i, r in enumerate(meta["regions"])}
         self.rain_thr = bust_cfg["rain_threshold_mm"]
         self.era5_timing = era5_timing
+        self.era5_shift_days = int(era5_shift_days)
         self.fitted = False
 
     # ------------------------------------------------------------------ fit
     def fit(self, train, y_train, thresholds):
         """train: training-year rows (with observed_rain); y_train: their bust labels;
         thresholds: output of labels.fit_thresholds on the same rows."""
-        st = issue_state(train, self.era5_timing)
+        st = issue_state(train, self.era5_timing, self.era5_shift_days)
         st["month"] = st["date"].dt.month
         cols = list(_STATE_Z)
         g = st.groupby(["subdivision_code", "month"])[cols]
@@ -182,7 +188,7 @@ class FeatureBuilder:
         X["fc_region_dev"] = fc - rm.to_numpy()
 
         # ERA5 state at issue date
-        st = issue_state(df, self.era5_timing)
+        st = issue_state(df, self.era5_timing, self.era5_shift_days)
         st["month"] = st["date"].dt.month
         sk = pd.MultiIndex.from_arrays([st["subdivision_code"], st["month"]])
         mu, sd = self.state_mean.reindex(sk), self.state_std.reindex(sk)
@@ -227,7 +233,7 @@ class FeatureBuilder:
             return f.reset_index().to_dict(orient="list")
         return {
             "region_of": self.region_of, "region_ids": self.region_ids, "rain_thr": self.rain_thr,
-            "era5_timing": self.era5_timing, "train_years": self.train_years,
+            "era5_timing": self.era5_timing, "era5_shift_days": self.era5_shift_days, "train_years": self.train_years,
             "state_mean": frame(self.state_mean), "state_std": frame(self.state_std),
             "tp_mean": frame(self.tp_mean), "clim": frame(self.clim),
             "thresholds": self.thresholds.to_dict(orient="list"),
@@ -241,6 +247,7 @@ class FeatureBuilder:
         self = cls.__new__(cls)
         self.region_of, self.region_ids, self.rain_thr = d["region_of"], d["region_ids"], d["rain_thr"]
         self.era5_timing, self.train_years = d["era5_timing"], d["train_years"]
+        self.era5_shift_days = d.get("era5_shift_days", 0)
         idx = ["subdivision_code", "month"]
         self.state_mean = pd.DataFrame(d["state_mean"]).set_index(idx)
         self.state_std = pd.DataFrame(d["state_std"]).set_index(idx)

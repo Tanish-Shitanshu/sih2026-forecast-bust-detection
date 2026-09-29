@@ -114,6 +114,26 @@ For live use, construct `VishwasService(history=df)` with the latest rows. The t
 
 Per-lead and per-subdivision tables are in `models/ncmrwf/evaluation/`. Retrain with `python scripts/train.py --source ncmrwf`.
 
+### GEFS + ERA5 comparison model (Tanish's PR #2, backup track)
+
+**Setup:** GEFSv12 control reforecast, 2015–2019, daily runs, 602,580 rows; ERA5 features; IMD observations. It has its own thresholds and its own bundle in `models/gefs/`, with nothing shared with NCMRWF. Split: train 2015–2017, calibration 2018, test 2019. The labels match the data team's `is_bust` column 100%.
+
+| | NCMRWF (primary) | GEFS (backup) |
+|---|---|---|
+| Test years / rows | 2013–2015 / 11,880 | 2019 / 120,450 |
+| Base rate | 16.6% | 16.7% |
+| **Model PR-AUC [95% CI]** | **0.534** [0.499, 0.578] | **0.510** [0.496, 0.523] |
+| Forecast amount only | 0.452 | 0.467 |
+| Model minus forecast-only | +0.084 [+0.062, +0.109] | +0.043 [+0.036, +0.050] |
+| Recall @ Orange+, magnitude busts | 30% | 41% |
+
+The test years differ, so this is a side-by-side, not a head-to-head.
+
+**ERA5 leakage fix.** In this table the ERA5 columns are daily means/sums over the *issue date*, so for a 00Z issue they include the next 24 h. ERA5 `total_precipitation` on the issue date correlates 0.81 with the Day-1 observed rain (0.57 with the day before).
+- The GEFS profile sets `era5_shift_days: 1`, so every issue date uses the previous day's ERA5, which is fully known at 00Z.
+- Measured effect of the leak: Day-1 PR-AUC **0.676 with the leak vs 0.635 without**. The other lead days are unchanged.
+- Separately, that column's scale (mean 0.63 mm vs IMD 3.49 mm) suggests 4 hourly accumulations were summed rather than 24. The features are unit-free ratios, so the model is unaffected.
+
 ### Synthetic data (pipeline check only, not a skill claim)
 Test year 2023, 39,930 rows: PR-AUC 0.611 [0.594, 0.625] vs forecast-only 0.578 and climatology 0.381. Bundle in `models/synthetic/`.
 

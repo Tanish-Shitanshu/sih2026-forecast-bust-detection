@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 # dev-only outcome log written by VishwasService.record_outcome
 data/feedback_dev*.jsonl
+# GEFS table lives in data/processed/bust_dataset.parquet (PR #2); local copy only
+data/gefs_pairs.parquet

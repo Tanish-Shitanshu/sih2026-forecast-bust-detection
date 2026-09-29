@@ -179,7 +179,7 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     log(f"  bust rate {y.mean():.3f} (train {y[tr].mean():.3f}, test {y[te].mean():.3f}); agreement with "
         f"provided is_bust: {'n/a (column absent)' if agree is None else f'{agree:.4f}'}")
 
-    builder = FeatureBuilder(meta, cfg["bust"], timing).fit(df[tr], y[tr], thr)
+    builder = FeatureBuilder(meta, cfg["bust"], timing, cfg.get("era5_shift_days", 0)).fit(df[tr], y[tr], thr)
     X = builder.transform(df, oof=tr)
     booster, info = train_booster(X[tr], y[tr], X[ca], y[ca], cfg["lightgbm"])
     log(f"  LightGBM: {info['best_iteration']} trees in {info['train_seconds']} s")
@@ -205,7 +205,7 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
 
     model.metadata = {
         "source": cfg.get("source"), "version": __version__, "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "data_path": _rel(path), "data_sha256_16": _sha(path), "data_report": report, "era5_timing": timing,
+        "data_path": _rel(path), "data_sha256_16": _sha(path), "data_report": report, "era5_timing": timing, "era5_shift_days": cfg.get("era5_shift_days", 0),
         "split_years": split["years"], "bust_definition": cfg["bust"], "label_agreement_with_provided": agree,
         "features": FEATURES, "lightgbm": info, "importance": imp,
         "trust_ranges": feature_ranges(X[tr]), "summary_metrics": {k: v for k, v in m["model"].items()},
