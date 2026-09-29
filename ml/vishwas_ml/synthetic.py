@@ -165,7 +165,7 @@ def generate(seed=0, start="2020-01-01", end="2023-12-31", every=3, ensemble=Fal
     spread_by_row = df["forecast_rain_spread"].to_numpy()
 
     # Labels exactly as the data team will produce them: thresholds on training years only.
-    cfg = load_config()
+    cfg = load_config(source="synthetic")
     split = year_split(df, cfg["split"])
     thr = fit_thresholds(df[split["train"]], cfg["bust"]["percentile"], cfg["bust"]["min_error_mm"])
     lab = label_frame(df, thr, cfg["bust"])

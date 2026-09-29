@@ -28,7 +28,7 @@ def _train(tmp_path, table):
 
     path = tmp_path / "pairs.parquet"
     table.to_parquet(path, index=False)
-    cfg = load_config()
+    cfg = load_config(source="synthetic")
     cfg["data_path"], cfg["models_dir"] = path, tmp_path / "models"
     cfg["lightgbm"] = dict(cfg["lightgbm"], n_estimators=300)
     return cfg, train_pipeline(cfg, log=lambda *a: None)

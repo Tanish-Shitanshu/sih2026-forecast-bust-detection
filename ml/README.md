@@ -2,18 +2,25 @@
 
 Predicts, for each of the 33 IMD subdivisions and each lead day 1–10, the calibrated probability that an issued medium-range rainfall forecast (NCMRWF, or GEFS as a stand-in) will bust. It also explains the probability in plain language, finds historical analogs, and scores the model's own reliability.
 
-**Status:** complete pipeline, trained on **synthetic data** that matches the real schema. Swapping in the real table takes one line (see below).
+**Status:** trained on **real NCMRWF forecasts** (S2S reforecast, 1993–2015, 91,080 rows) against IMD observations. It's evaluated on held-out years 2013–2015 with confidence intervals. A synthetic-data model is kept for pipeline tests, and a GEFS model will be trained separately when that dataset arrives.
 
 ## Quick start
 
 ```bash
 cd ml
 python -m venv .venv && .venv/Scripts/pip install -r requirements.txt   # Linux/macOS: .venv/bin/pip
-.venv/Scripts/python scripts/make_synthetic.py     # regenerate ml/data/synthetic_pairs.parquet (deterministic)
-.venv/Scripts/python scripts/train.py              # train + calibrate + evaluate + save ml/models/ (~25 s)
-.venv/Scripts/python scripts/evaluate.py           # per-lead / per-subdivision tables from the saved bundle
-.venv/Scripts/python scripts/demo_api.py --cycle 2023-08-13   # every endpoint's JSON for one cycle
-.venv/Scripts/python -m pytest -q tests            # 29 tests (~90 s)
+.venv/Scripts/python scripts/train.py --source ncmrwf        # real NCMRWF model -> models/ncmrwf (~30 s)
+.venv/Scripts/python scripts/evaluate.py --source ncmrwf     # metrics + CIs, per lead day / subdivision
+.venv/Scripts/python scripts/demo_api.py --source ncmrwf --cycle 2015-12-01 --subdivision TN/PY --lead 1
+.venv/Scripts/python -m uvicorn serve:app --port 8000        # live API on the frontend's /api/v1 paths
+.venv/Scripts/python -m pytest -q tests                      # 43 tests (~90 s)
+```
+
+`--source` picks the forecast source: `ncmrwf` (default), `gefs` (when Tanish's data lands) or `synthetic`. Each has its own data file, bust thresholds and bundle under `models/<source>/`.
+
+**Rebuilding the NCMRWF table from the raw downloads** (23 zips from rds.ncmrwf.gov.in, IMD via imdlib, IMD subdivision shapefile):
+```bash
+.venv/Scripts/python scripts/build_s2s_pairs.py --s2s <SIH>/s2s_raw/years/*.zip --fc <SIH>/s2s_raw/ncmrwf_fc_1993_2015.parquet     --imd-dir <SIH>/geo_data/imd --shapefile <SIH>/geo_data/indian_met_zones.v2 --out data/ncmrwf_pairs.parquet
 ```
 
 ## Swapping in the real dataset
@@ -78,19 +85,37 @@ svc.confidence_map(lead_day=3)
 
 For live use, construct `VishwasService(history=df)` with the latest rows. The table needs no outcome columns, but it must include the previous ~10 days of issues, which the run-to-run features use.
 
-## Current metrics (synthetic data, test year 2023, 39,930 rows)
+## Current metrics: NCMRWF (real data)
 
-Bust base rate is 18.9%, rising from 9.9% on Day 1 to 25.7% on Day 10. "Alert" means Orange or Red (p ≥ 0.38).
+**Setup:**
+- NCMRWF S2S rain + MSLP / surface pressure / 10 m winds, 1993–2015, 12 runs a year.
+- IMD 0.25° observations averaged to the 33 subdivisions.
+- Bust thresholds fit on the training years only (1993–2011).
+- Calibration year 2012; **test years 2013–2015** (36 runs, 11,880 rows).
+- Base rate is 16.6%. 95% CIs come from a block bootstrap over the 36 issue dates.
 
-| | PR-AUC | ROC-AUC | Brier skill vs clim. | ECE | Precision @ alert | Recall @ alert | Accuracy @ 0.5 |
+| | PR-AUC [95% CI] | ROC-AUC | Brier skill vs clim. | ECE | Precision @ alert | Recall @ alert | Accuracy @ 0.5 |
 |---|---|---|---|---|---|---|---|
-| **Model** | **0.611** | 0.889 | **0.267** | **0.007** | 0.590 | **0.664** | 0.854 |
-| Forecast amount + lead only | 0.578 | 0.858 | 0.218 | 0.008 | 0.608 | 0.571 | 0.851 |
-| Climatology (historical rate) | 0.381 | 0.741 | 0 | 0.035 | 0.467 | 0.133 | 0.811 |
+| **Model** | **0.534** [0.499, 0.578] | 0.864 | **0.230** | 0.021 | 0.546 | **0.518** | 0.857 |
+| Forecast amount + lead only | 0.452 [0.423, 0.489] | 0.835 | 0.171 | 0.012 | 0.522 | 0.395 | 0.847 |
+| Climatology (historical rate) | 0.272 [0.243, 0.296] | 0.682 | 0 | 0.018 | 0.392 | 0.010 | 0.834 |
 
-The accuracy column shows why accuracy isn't the headline metric: climatology scores 81% while catching 13% of busts. Per-lead and per-subdivision precision, recall and PR-AUC are in `models/evaluation/per_lead.csv` and `per_subdivision.csv`. Reliability and PR-AUC by lead are plotted in `evaluation.png`. The model beats both baselines at every lead day. Calibration error stays at or below 0.02 at every lead.
+**Model minus forecast-only: +0.084 PR-AUC, 95% CI [+0.062, +0.109]**, better in 100% of resamples.
 
-**How to read these numbers:** they measure the pipeline, not real-world skill. In the synthetic data most busts (≈90%) are pure rain/no-rain flips, so the forecast amount carries most of the signal. ERA5 moisture and pressure anomalies add a real but modest lift. The real data will decide the actual numbers and feature ranking.
+**What the numbers say:**
+- **Lead day.** At Days 1–3 the model is no better than the forecast amount alone (Day 1: 0.478 vs 0.479). The gain appears from Day 5 onward (Day 5: 0.570 vs 0.456; Day 7: 0.491 vs 0.373).
+- **Trigger type.** At Orange+ it catches **53% of rain/no-rain busts but only 30% of magnitude busts**. Large misses are the hard case.
+- **Where it works.**
+  - Best on the large NW plains: Haryana/Delhi 0.76, Punjab 0.76, West UP 0.73.
+  - Weakest where the resolution limitation predicts: Coastal Karnataka (alert recall 13%), Kerala 0.42, Konkan & Goa 0.45.
+  - Gujarat is also low (0.26), but its base rate is only 6.7%.
+- **Inputs.** The NCMRWF weather variables add little: mean |SHAP| is 0.05 for pressure and 0.03 for wind, against 1.22 for forecast amount. Skill comes mainly from the forecast itself, how it varies across the run, regional context and each subdivision's bust history.
+- **Accuracy is not the headline.** Climatology scores 83% accuracy while catching 1% of busts.
+
+Per-lead and per-subdivision tables are in `models/ncmrwf/evaluation/`. Retrain with `python scripts/train.py --source ncmrwf`.
+
+### Synthetic data (pipeline check only, not a skill claim)
+Test year 2023, 39,930 rows: PR-AUC 0.611 [0.594, 0.625] vs forecast-only 0.578 and climatology 0.381. Bundle in `models/synthetic/`.
 
 ## Forecast source
 
@@ -129,6 +154,13 @@ From the real NCMRWF run of 1 Dec 2015 against IMD, subdivision Tamil Nadu & Pud
 - **5–11 Dec:** the forecast called almost no rain (0.7–4.6 mm) while 3–21 mm fell, so there are rain/no-rain busts on Days 4, 5, 8, 9 and 10.
 - **Neighbouring subdivisions** (Coastal AP, Rayalaseema) were forecast well.
 - **Caveat to say out loud:** 41 mm is the average over all of Tamil Nadu; Chennai itself got several hundred mm. Subdivision averaging dilutes local extremes.
+
+**What the trained NCMRWF model says** (2015 is a test year, so this is out-of-sample):
+- **Day 1 (2 Dec):** 11%, Green. **Missed.** The Day-1 lead time pulled the risk down.
+- **Day 4:** 40%, Orange. Correct: that day busted (rain/no-rain).
+- **Day 5:** 20%, Yellow. Correct.
+
+Present it as it is: the model flagged the continuing-rain phase and missed the first extreme day. That matches its measured weakness on magnitude busts.
 
 ## Data questions
 

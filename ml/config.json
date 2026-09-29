@@ -1,8 +1,9 @@
 {
-  "source": "synthetic",
+  "source": "ncmrwf",
   "sources": {
     "synthetic": {"data_path": "data/synthetic_pairs.parquet", "models_dir": "models/synthetic"},
-    "ncmrwf": {"data_path": "data/ncmrwf_pairs.parquet", "models_dir": "models/ncmrwf"},
+    "ncmrwf": {"data_path": "data/ncmrwf_pairs.parquet", "models_dir": "models/ncmrwf",
+               "split": {"test_years": [2013, 2014, 2015], "calib_years": [2012]}},
     "gefs": {"data_path": "data/gefs_pairs.parquet", "models_dir": "models/gefs"}
   },
   "subdivisions_path": "data/subdivisions.json",
