@@ -13,7 +13,7 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements.txt   # Linux/
 .venv/Scripts/python scripts/evaluate.py --source ncmrwf     # metrics + CIs, per lead day / subdivision
 .venv/Scripts/python scripts/demo_api.py --source ncmrwf --cycle 2015-12-01 --subdivision TN/PY --lead 1
 .venv/Scripts/python -m uvicorn serve:app --port 8000        # live API on the frontend's /api/v1 paths
-.venv/Scripts/python -m pytest -q tests                      # 43 tests (~90 s)
+.venv/Scripts/python -m pytest -q tests                      # 44 tests (~2 min)
 ```
 
 `--source` picks the forecast source: `ncmrwf` (default), `gefs` (when Tanish's data lands) or `synthetic`. Each has its own data file, bust thresholds and bundle under `models/<source>/`.
@@ -59,6 +59,8 @@ If the frontend's subdivision list ever changes, run `scripts/sync_subdivisions.
 | Service layer | `vishwas_ml/service.py` | One method per endpoint, returning the frontend's response shapes |
 
 ## API mapping (for backend)
+
+Full guide for the backend team: [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md).
 
 The frontend's API page (`frontend/index.html`, `var API`) is authoritative. Its paths differ from the handoff brief, so both are covered:
 
@@ -122,17 +124,21 @@ Per-lead and per-subdivision tables are in `models/ncmrwf/evaluation/`. Retrain 
 |---|---|---|
 | Test years / rows | 2013–2015 / 11,880 | 2019 / 120,450 |
 | Base rate | 16.6% | 16.7% |
-| **Model PR-AUC [95% CI]** | **0.534** [0.499, 0.578] | **0.510** [0.496, 0.523] |
+| **Model PR-AUC [95% CI]** | **0.534** [0.499, 0.578] | **0.509** [0.495, 0.523] |
 | Forecast amount only | 0.452 | 0.467 |
-| Model minus forecast-only | +0.084 [+0.062, +0.109] | +0.043 [+0.036, +0.050] |
+| Model minus forecast-only | +0.084 [+0.062, +0.109] | +0.042 [+0.035, +0.050] |
 | Recall @ Orange+, magnitude busts | 30% | 41% |
 
 The test years differ, so this is a side-by-side, not a head-to-head.
 
-**ERA5 leakage fix.** In this table the ERA5 columns are daily means/sums over the *issue date*, so for a 00Z issue they include the next 24 h. ERA5 `total_precipitation` on the issue date correlates 0.81 with the Day-1 observed rain (0.57 with the day before).
-- The GEFS profile sets `era5_shift_days: 1`, so every issue date uses the previous day's ERA5, which is fully known at 00Z.
-- Measured effect of the leak: Day-1 PR-AUC **0.676 with the leak vs 0.635 without**. The other lead days are unchanged.
-- Separately, that column's scale (mean 0.63 mm vs IMD 3.49 mm) suggests 4 hourly accumulations were summed rather than 24. The features are unit-free ratios, so the model is unaffected.
+**ERA5 leakage: found, fixed at source, verified.**
+- The first version of the table had ERA5 as daily means/sums over the *issue date*, which includes the 24 h after a 00Z issue. ERA5 rain on the issue date correlated 0.81 with the Day-1 observed rain, and the leak inflated Day-1 PR-AUC from 0.635 to 0.676.
+- The data team fixed it at source (data branch commit `56a65ec`): every ERA5 column is now the previous day's.
+- Checked here: new ERA5 = old ERA5 of the previous day exactly; forecast/observed/labels are byte-identical; ERA5 rain scale is fixed (mean 3.89 mm vs IMD 3.49).
+- Because the shift is now in the data, the `gefs` profile uses `era5_shift_days: 0`. Setting it to 1 would shift twice.
+- Results on the fixed data: PR-AUC 0.509 [0.495, 0.523], Day 1 0.633, the same as the ML-side workaround gave.
+- 1 Jan 2015 (330 rows) has no ERA5 (it would need 31 Dec 2014); the model treats it as missing.
+- `gefs` reads `../data/processed/bust_dataset.parquet`, which exists once PR #2 is merged. Before that, train with `--data <copy>`.
 
 ### Synthetic data (pipeline check only, not a skill claim)
 Test year 2023, 39,930 rows: PR-AUC 0.611 [0.594, 0.625] vs forecast-only 0.578 and climatology 0.381. Bundle in `models/synthetic/`.
