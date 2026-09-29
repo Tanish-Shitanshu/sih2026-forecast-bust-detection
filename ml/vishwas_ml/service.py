@@ -28,7 +28,7 @@ from .events import tag_events
 from .explain import explain_rows
 from .feedback import OUTCOMES, append_outcome, read_outcomes
 from .model import BustModel
-from .schema import ERA5, coerce, load_pairs
+from .schema import coerce, load_pairs
 from .trust import REASONS, combine, flags
 
 HISTORY_DAYS = 11  # earlier issues needed for run-to-run change, tendency and valid-time ERA5
@@ -53,9 +53,9 @@ class VishwasService:
         if history is None:
             history = load_pairs(self.cfg["data_path"])
         else:
-            history = coerce(history.assign(**{c: history.get(c, np.nan) for c in
-                                               ["observed_rain", "error", "is_bust", "trigger_reason"] + ERA5
-                                               if c not in history}))
+            if "observed_rain" not in history and "observed_rain_mm" not in history:
+                history = history.assign(observed_rain=np.nan)  # live rows: outcome not known yet
+            history = coerce(history)
         self.history = history
         self.subs = {s["code"]: s for s in self.meta["subdivisions"]}
         self._by_name = {s["name"].lower(): s["code"] for s in self.meta["subdivisions"]}

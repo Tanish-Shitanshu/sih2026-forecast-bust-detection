@@ -1,12 +1,15 @@
 {
   "version": "0.1.0",
-  "trained_at": "2026-09-28T17:36:44+00:00",
+  "trained_at": "2026-09-29T05:52:24+00:00",
   "data_path": "data/synthetic_pairs.parquet",
-  "data_sha256_16": "2c25e837212adf4f",
+  "data_sha256_16": "d8072014154cc53b",
   "data_report": {
     "error_mismatch_rows": 0,
     "obs_inconsistent_valid_dates": 0,
     "trigger_reason_inconsistent": 0,
+    "absent_optional_columns": [
+      "forecast_rain_spread"
+    ],
     "era5_timing_detected": "issue",
     "rows": 160710,
     "dates": 487,
@@ -24,7 +27,9 @@
       "wind_v10": 0.0,
       "total_precipitation": 0.0
     },
-    "warnings": []
+    "warnings": [
+      "optional columns absent (features will be NaN / labels recomputed): ['forecast_rain_spread']"
+    ]
   },
   "era5_timing": "issue",
   "split_years": {
@@ -55,6 +60,8 @@
     "fc_jump_abs",
     "fc_jump_gap",
     "fc_neighbor_std",
+    "fc_spread",
+    "fc_spread_rel",
     "fc_region_mean",
     "fc_region_dev",
     "mslp_z",
@@ -78,7 +85,7 @@
   ],
   "lightgbm": {
     "best_iteration": 162,
-    "train_seconds": 1.94
+    "train_seconds": 1.98
   },
   "importance": {
     "features": {
@@ -110,7 +117,9 @@
       "era5_tp_rel": 0.0032,
       "region_id": 0.00237,
       "bust_threshold_mm": 0.00064,
-      "fc_jump_gap": 0.0
+      "fc_jump_gap": 0.0,
+      "fc_spread": 0.0,
+      "fc_spread_rel": 0.0
     },
     "groups": {
       "amount": 1.17347,
@@ -124,7 +133,8 @@
       "season": 0.02761,
       "wind": 0.01349,
       "temperature": 0.0044,
-      "recent_rain": 0.0032
+      "recent_rain": 0.0032,
+      "ensemble": 0.0
     }
   },
   "trust_ranges": {

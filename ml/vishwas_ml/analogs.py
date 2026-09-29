@@ -16,7 +16,7 @@ from sklearn.neighbors import NearestNeighbors
 
 ANALOG_FEATURES = ["fc_log1p", "fc_clim_ratio", "fc_jump", "fc_neighbor_std", "fc_region_dev", "mslp_z",
                    "mslp_region_z", "dewpoint_z", "dewpoint_depression_z", "temp_z", "wind_speed_z",
-                   "era5_tp_rel", "hist_bust_rate", "month_sin", "month_cos"]
+                   "era5_tp_rel", "fc_spread_rel", "hist_bust_rate", "month_sin", "month_cos"]
 META = ["date", "subdivision_code", "region", "lead_day", "forecast_rain", "observed_rain", "is_bust",
         "trigger_reason", "event"]
 REGION_PENALTY = 0.5
@@ -36,9 +36,12 @@ class AnalogIndex:
     def fit(self, X, meta, weights, ref_k=5, ref_sample=800, seed=0):
         """X: feature frame; meta: library rows with the META columns (labels known)."""
         A = X[self.cols].to_numpy(float)
-        self.center = np.nanmedian(A, 0)
-        q75, q25 = np.nanpercentile(A, [75, 25], 0)
-        self.scale = np.where((q75 - q25) > 1e-9, q75 - q25, np.nanstd(A, 0) + 1e-9)
+        seen = np.isfinite(A).any(0)  # columns absent from the data stay at 0 after scaling
+        B = A[:, seen]
+        self.center, self.scale = np.zeros(A.shape[1]), np.ones(A.shape[1])
+        self.center[seen] = np.nanmedian(B, 0)
+        q75, q25 = np.nanpercentile(B, [75, 25], 0)
+        self.scale[seen] = np.where((q75 - q25) > 1e-9, q75 - q25, np.nanstd(B, 0) + 1e-9)
         self.w = np.asarray(weights, float)
         self.Z = self._z(A)
         self._set_meta(meta[META].reset_index(drop=True).copy())

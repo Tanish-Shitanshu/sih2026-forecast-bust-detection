@@ -93,4 +93,5 @@ def test_schema_validation_rejects_bad_tables(small_data):
         with pytest.raises(SchemaError):
             validate(bad, codes)
     with pytest.raises(SchemaError):
-        validate(ok.drop(columns="mslp"), codes)
+        validate(ok.drop(columns="forecast_rain"), codes)
+    validate(ok.drop(columns="mslp"), codes)  # ERA5 variables are optional

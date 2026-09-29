@@ -2,6 +2,8 @@
 
 Inputs used: forecast_rain (this and earlier runs), ERA5 state at the issue date, and
 tables fitted on training years (climatology, bust thresholds, historical bust rates).
+Optional: forecast_rain_spread (ensemble std across members, e.g. NCMRWF S2S); missing
+ERA5 variables simply become NaN features, which LightGBM handles.
 Never used: observed_rain, error, is_bust, trigger_reason of the row or of any row whose
 valid date is on or after the issue date.
 
@@ -19,6 +21,7 @@ FEATURE_GROUPS = {
     "fc_minus_rain_threshold": "amount",
     "fc_jump": "run_change", "fc_jump_abs": "run_change", "fc_jump_gap": "run_change",
     "fc_neighbor_std": "lead_consistency",
+    "fc_spread": "ensemble", "fc_spread_rel": "ensemble",
     "fc_region_mean": "regional", "fc_region_dev": "regional",
     "mslp_z": "pressure", "surface_pressure_z": "pressure", "mslp_region_z": "pressure", "mslp_tendency": "pressure",
     "dewpoint_z": "moisture", "dewpoint_depression": "moisture", "dewpoint_depression_z": "moisture",
@@ -146,6 +149,10 @@ class FeatureBuilder:
         clim = self.clim.reindex(ck)
         X["fc_clim_ratio"] = np.log1p(fc) - np.log1p(clim["clim_obs_mean"].to_numpy())
         X["fc_minus_rain_threshold"] = fc - self.rain_thr
+        # Ensemble spread across members (NaN when the forecast source is deterministic).
+        spread = df["forecast_rain_spread"].to_numpy(float) if "forecast_rain_spread" in df else np.full(len(df), np.nan)
+        X["fc_spread"] = spread
+        X["fc_spread_rel"] = spread / (fc + 1.0)
 
         # run-to-run change: the most recent earlier issue that covers the same valid date
         k = pd.DataFrame({"s": df["subdivision_code"], "v": valid, "d": df["date"], "fc": fc})

@@ -23,7 +23,8 @@ RANGE_FEATURES = ["forecast_rain", "mslp_z", "dewpoint_z", "temp_z", "wind_speed
 
 
 def feature_ranges(X):
-    return {c: [float(np.nanpercentile(X[c], 0.5)), float(np.nanpercentile(X[c], 99.5))] for c in RANGE_FEATURES}
+    return {c: [float(np.nanpercentile(X[c], 0.5)), float(np.nanpercentile(X[c], 99.5))]
+            for c in RANGE_FEATURES if X[c].notna().any()}
 
 
 def flags(support_busts, novelty, X, ranges, p, analog_rate, min_busts=30):
@@ -36,7 +37,7 @@ def flags(support_busts, novelty, X, ranges, p, analog_rate, min_busts=30):
     for c, (lo, hi) in ranges.items():
         v = X[c].to_numpy(float)
         out += ((v < lo) | (v > hi)) & np.isfinite(v)
-    f["out_of_range"] = np.clip(out / len(ranges) * 3, 0, 1)
+    f["out_of_range"] = np.clip(out / max(len(ranges), 1) * 3, 0, 1)
     gap = np.abs(np.asarray(p, float) - np.nan_to_num(np.asarray(analog_rate, float), nan=np.asarray(p, float)))
     f["analog_conflict"] = np.clip((gap - 0.15) / 0.35, 0, 1)
     return f

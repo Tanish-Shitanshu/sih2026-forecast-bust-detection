@@ -77,6 +77,12 @@ def describe(group, x, ctx):
         s = x["fc_neighbor_std"]
         word = "sharply" if np.isfinite(s) and s > 10 else "moderately" if np.isfinite(s) and s > 3 else "little"
         return f"Forecast rain varies {word} across neighbouring days of this run"
+    if group == "ensemble":
+        s = x["fc_spread"]
+        if not np.isfinite(s):
+            return "No ensemble spread available for this forecast"
+        word = "disagree strongly" if x["fc_spread_rel"] > 1 else "differ somewhat" if x["fc_spread_rel"] > 0.4             else "agree closely"
+        return f"Ensemble members {word} (spread {s:.0f} mm)"
     if group == "regional":
         return f"Forecast is {x['fc_region_dev']:+.0f} mm from the {ctx['region_name']} average"
     if group == "pressure":

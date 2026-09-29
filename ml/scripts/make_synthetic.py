@@ -30,8 +30,9 @@ def main():
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "data" / "synthetic_pairs.parquet"))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--every", type=int, default=3, help="days between issue dates")
+    ap.add_argument("--ensemble", action="store_true", help="add forecast_rain_spread (ensemble std)")
     a = ap.parse_args()
-    df = generate(seed=a.seed, every=a.every)
+    df = generate(seed=a.seed, every=a.every, ensemble=a.ensemble)
     df.to_parquet(a.out, index=False)
     by_lead = df.groupby("lead_day")["is_bust"].mean().round(3).to_dict()
     print(f"wrote {a.out}: {len(df):,} rows, {df['date'].nunique()} issue dates, "

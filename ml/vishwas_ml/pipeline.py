@@ -159,9 +159,10 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     thr = fit_thresholds(df[tr], cfg["bust"]["percentile"], cfg["bust"]["min_error_mm"])
     lab = label_frame(df, thr, cfg["bust"])
     y = lab["is_bust"].to_numpy()
-    agree = float((y == df["is_bust"].to_numpy()).mean())
-    log(f"  bust rate {y.mean():.3f} (train {y[tr].mean():.3f}, test {y[te].mean():.3f}); "
-        f"agreement with provided is_bust: {agree:.4f}")
+    known = df["is_bust"].notna().to_numpy()
+    agree = float((y[known] == df["is_bust"].to_numpy()[known].astype(bool)).mean()) if known.any() else None
+    log(f"  bust rate {y.mean():.3f} (train {y[tr].mean():.3f}, test {y[te].mean():.3f}); agreement with "
+        f"provided is_bust: {'n/a (column absent)' if agree is None else f'{agree:.4f}'}")
 
     builder = FeatureBuilder(meta, cfg["bust"], timing).fit(df[tr], y[tr], thr)
     X = builder.transform(df, oof=tr)
