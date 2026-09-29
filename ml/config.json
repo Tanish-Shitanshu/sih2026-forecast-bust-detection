@@ -1,0 +1,48 @@
+{
+  "data_path": "data/synthetic_pairs.parquet",
+  "subdivisions_path": "data/subdivisions.json",
+  "models_dir": "models",
+
+  "bust": {
+    "min_error_mm": 25,
+    "percentile": 95,
+    "rain_threshold_mm": 2.5
+  },
+
+  "split": {
+    "test_years": "auto",
+    "calib_years": "auto"
+  },
+
+  "era5_timing": "auto",
+
+  "lightgbm": {
+    "num_leaves": 31,
+    "learning_rate": 0.03,
+    "min_child_samples": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "n_estimators": 3000,
+    "early_stopping_rounds": 150,
+    "seed": 0
+  },
+
+  "probability_clip": [0.01, 0.99],
+
+  "analogs": {
+    "k": 5,
+    "k_trust": 25
+  },
+
+  "trust": {
+    "min_busts": 20
+  },
+
+  "feedback": {
+    "min_outcomes": 50,
+    "weight": 1.0,
+    "partial_as": null
+  }
+}

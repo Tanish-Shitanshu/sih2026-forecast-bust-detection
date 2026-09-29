@@ -1,0 +1,487 @@
+{
+  "source": "frontend/index.html",
+  "source_commit": "01953d0",
+  "subdivisions": [
+    {
+      "id": 1,
+      "code": "J&K",
+      "name": "Jammu, Kashmir & Ladakh",
+      "map_col": 3,
+      "map_row": 1,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 2,
+      "code": "HP",
+      "name": "Himachal Pradesh",
+      "map_col": 3,
+      "map_row": 2,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 3,
+      "code": "PB",
+      "name": "Punjab",
+      "map_col": 2,
+      "map_row": 2,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 4,
+      "code": "AR",
+      "name": "Arunachal Pradesh",
+      "map_col": 6,
+      "map_row": 2,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 5,
+      "code": "W.RJ",
+      "name": "West Rajasthan",
+      "map_col": 1,
+      "map_row": 3,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 6,
+      "code": "HR/DL",
+      "name": "Haryana, Chandigarh & Delhi",
+      "map_col": 2,
+      "map_row": 3,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 7,
+      "code": "W.UP",
+      "name": "West Uttar Pradesh",
+      "map_col": 3,
+      "map_row": 3,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 8,
+      "code": "E.UP",
+      "name": "East Uttar Pradesh",
+      "map_col": 4,
+      "map_row": 3,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 9,
+      "code": "SIK/NWB",
+      "name": "Sub-Himalayan West Bengal & Sikkim",
+      "map_col": 5,
+      "map_row": 3,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 10,
+      "code": "ASM",
+      "name": "Assam & Meghalaya",
+      "map_col": 6,
+      "map_row": 3,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 11,
+      "code": "E.RJ",
+      "name": "East Rajasthan",
+      "map_col": 2,
+      "map_row": 4,
+      "region_key": "nw",
+      "region_name": "Northwest India"
+    },
+    {
+      "id": 12,
+      "code": "BR",
+      "name": "Bihar",
+      "map_col": 4,
+      "map_row": 4,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 13,
+      "code": "GWB",
+      "name": "Gangetic West Bengal",
+      "map_col": 5,
+      "map_row": 4,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 14,
+      "code": "NE.HL",
+      "name": "Nagaland, Manipur, Mizoram & Tripura",
+      "map_col": 6,
+      "map_row": 4,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 15,
+      "code": "GJ",
+      "name": "Gujarat Region",
+      "map_col": 1,
+      "map_row": 5,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 16,
+      "code": "W.MP",
+      "name": "West Madhya Pradesh",
+      "map_col": 2,
+      "map_row": 5,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 17,
+      "code": "E.MP",
+      "name": "East Madhya Pradesh",
+      "map_col": 3,
+      "map_row": 5,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 18,
+      "code": "JH",
+      "name": "Jharkhand",
+      "map_col": 4,
+      "map_row": 5,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 19,
+      "code": "OD",
+      "name": "Odisha",
+      "map_col": 5,
+      "map_row": 5,
+      "region_key": "ne",
+      "region_name": "East and Northeast India"
+    },
+    {
+      "id": 20,
+      "code": "SAU/KCH",
+      "name": "Saurashtra & Kutch",
+      "map_col": 1,
+      "map_row": 6,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 21,
+      "code": "MDH.MH",
+      "name": "Madhya Maharashtra",
+      "map_col": 2,
+      "map_row": 6,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 22,
+      "code": "VID",
+      "name": "Vidarbha",
+      "map_col": 3,
+      "map_row": 6,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 23,
+      "code": "CG",
+      "name": "Chhattisgarh",
+      "map_col": 4,
+      "map_row": 6,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 24,
+      "code": "KNK/GA",
+      "name": "Konkan & Goa",
+      "map_col": 1,
+      "map_row": 7,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 25,
+      "code": "MWD",
+      "name": "Marathwada",
+      "map_col": 2,
+      "map_row": 7,
+      "region_key": "ci",
+      "region_name": "Central India"
+    },
+    {
+      "id": 26,
+      "code": "TG",
+      "name": "Telangana",
+      "map_col": 3,
+      "map_row": 7,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 27,
+      "code": "CST.AP",
+      "name": "Coastal Andhra Pradesh",
+      "map_col": 4,
+      "map_row": 7,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 28,
+      "code": "CST.KA",
+      "name": "Coastal Karnataka",
+      "map_col": 1,
+      "map_row": 8,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 29,
+      "code": "NI.KA",
+      "name": "North Interior Karnataka",
+      "map_col": 2,
+      "map_row": 8,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 30,
+      "code": "RYL",
+      "name": "Rayalaseema",
+      "map_col": 3,
+      "map_row": 8,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 31,
+      "code": "KL",
+      "name": "Kerala",
+      "map_col": 1,
+      "map_row": 9,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 32,
+      "code": "SI.KA",
+      "name": "South Interior Karnataka",
+      "map_col": 2,
+      "map_row": 9,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    },
+    {
+      "id": 33,
+      "code": "TN/PY",
+      "name": "Tamil Nadu & Puducherry",
+      "map_col": 3,
+      "map_row": 9,
+      "region_key": "sp",
+      "region_name": "South Peninsula"
+    }
+  ],
+  "regions": [
+    {
+      "key": "nw",
+      "name": "Northwest India",
+      "codes": [
+        "J&K",
+        "HP",
+        "PB",
+        "HR/DL",
+        "W.RJ",
+        "E.RJ",
+        "W.UP",
+        "E.UP"
+      ]
+    },
+    {
+      "key": "ci",
+      "name": "Central India",
+      "codes": [
+        "GJ",
+        "SAU/KCH",
+        "W.MP",
+        "E.MP",
+        "CG",
+        "MDH.MH",
+        "MWD",
+        "VID",
+        "KNK/GA"
+      ]
+    },
+    {
+      "key": "sp",
+      "name": "South Peninsula",
+      "codes": [
+        "TG",
+        "CST.AP",
+        "RYL",
+        "CST.KA",
+        "NI.KA",
+        "SI.KA",
+        "KL",
+        "TN/PY"
+      ]
+    },
+    {
+      "key": "ne",
+      "name": "East and Northeast India",
+      "codes": [
+        "BR",
+        "JH",
+        "OD",
+        "GWB",
+        "SIK/NWB",
+        "ASM",
+        "AR",
+        "NE.HL"
+      ]
+    }
+  ],
+  "tiers": [
+    {
+      "key": "green",
+      "label": "Green, no warning",
+      "short": "No warning",
+      "max": 0.18,
+      "band": "0% to 18%",
+      "confidence_band": "82% to 100%",
+      "action": "No action needed. The forecast is reliable at this lead time."
+    },
+    {
+      "key": "yellow",
+      "label": "Yellow, watch",
+      "short": "Watch",
+      "max": 0.38,
+      "band": "18% to 38%",
+      "confidence_band": "62% to 82%",
+      "action": "Cross-check the short-range nowcast before briefing."
+    },
+    {
+      "key": "orange",
+      "label": "Orange, alert",
+      "short": "Alert",
+      "max": 0.62,
+      "band": "38% to 62%",
+      "confidence_band": "38% to 62%",
+      "action": "Escalate to the duty forecaster for manual review."
+    },
+    {
+      "key": "red",
+      "label": "Red, warning",
+      "short": "Warning",
+      "max": 1.01,
+      "band": "62% to 100%",
+      "confidence_band": "0% to 38%",
+      "action": "Escalate immediately. Treat the forecast with strong caution."
+    }
+  ],
+  "trust_levels": [
+    {
+      "max": 0.35,
+      "label": "Typical"
+    },
+    {
+      "max": 0.55,
+      "label": "Slightly reduced"
+    },
+    {
+      "max": 0.72,
+      "label": "Reduced"
+    },
+    {
+      "max": 9,
+      "label": "Substantially reduced"
+    }
+  ],
+  "events": [
+    "monsoon depression",
+    "heavy rainfall event",
+    "western disturbance",
+    "cyclone",
+    "heat wave",
+    "break or active monsoon phase"
+  ],
+  "event_sets": {
+    "COAST": [
+      "SAU/KCH",
+      "GJ",
+      "KNK/GA",
+      "CST.KA",
+      "KL",
+      "TN/PY",
+      "CST.AP",
+      "OD",
+      "GWB"
+    ],
+    "NW": [
+      "J&K",
+      "HP",
+      "PB",
+      "HR/DL",
+      "W.RJ",
+      "E.RJ",
+      "W.UP",
+      "E.UP"
+    ],
+    "HEAT": [
+      "PB",
+      "HR/DL",
+      "W.RJ",
+      "E.RJ",
+      "W.UP",
+      "E.UP",
+      "W.MP",
+      "E.MP",
+      "VID",
+      "MWD",
+      "TG",
+      "RYL",
+      "BR",
+      "JH",
+      "CG",
+      "NI.KA",
+      "MDH.MH"
+    ],
+    "HEAVY": [
+      "KNK/GA",
+      "CST.KA",
+      "KL",
+      "ASM",
+      "NE.HL",
+      "AR",
+      "SIK/NWB",
+      "HP",
+      "J&K",
+      "MDH.MH"
+    ],
+    "NODEP": [
+      "J&K",
+      "HP",
+      "PB",
+      "HR/DL",
+      "W.RJ"
+    ]
+  }
+}
