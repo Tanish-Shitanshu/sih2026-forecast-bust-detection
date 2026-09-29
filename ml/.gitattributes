@@ -1,0 +1,5 @@
+# Trained model artefacts must be stored and checked out byte-for-byte: LightGBM cannot
+# parse booster.txt once git converts it to CRLF on Windows checkouts.
+models/** -text
+data/*.parquet binary
+data/*.csv -text
