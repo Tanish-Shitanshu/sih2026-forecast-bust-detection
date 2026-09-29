@@ -5,6 +5,7 @@ service_registry) -- nothing here is mocked. ml/tests covers the model
 itself; this covers what the backend adds around it.
 """
 import time
+from pathlib import Path
 
 from conftest import CYCLE
 
@@ -254,6 +255,42 @@ def test_retraining_returns_immediately_and_rejects_concurrent(client, admin_h):
             break
         time.sleep(2)
     assert r.json()["status"] == "done", r.json()
+    # approved outcomes are really passed to recalibration ("partial" ones are excluded by design);
+    # the seeded demo set is below the 50-outcome minimum, so recalibration is skipped and says so
+    recal = r.json()["metrics"]["recalibration"]
+    approved = client.get("/api/v1/outcomes", params={"status": "approved"}, headers=admin_h).json()["items"]
+    usable = sum(o["outcome"] in ("correct", "incorrect") for o in approved)
+    assert recal["approved_used"] == usable > 0
+    assert recal["status"].startswith("skipped")
+
+
+def test_retraining_never_writes_committed_models(client, admin_h):
+    """Retrained bundles go to the runtime folder; ml/models/ stays byte-identical."""
+    import os
+    import subprocess
+    import service_registry
+    repo = Path(__file__).resolve().parents[2]
+    rt = service_registry.runtime_dir("ncmrwf")
+    assert (rt / "booster.txt").exists(), "the finished retraining run should have written the runtime bundle"
+    assert Path(os.environ["VISHWAS_RUNTIME_MODELS"]) in rt.parents
+    changed = subprocess.run(["git", "status", "--porcelain", "--", "ml/models"], cwd=repo,
+                             capture_output=True, text=True).stdout.strip()
+    assert changed == "", f"ml/models/ was modified:\n{changed}"
+    assert service_registry.active_models_dir("ncmrwf") == rt
+
+
+def test_role_change_applies_to_existing_token(client, admin_h):
+    """Demoting a user must take effect on their next request, not when the token expires."""
+    from conftest import login
+    r = client.post("/api/v1/users", json={"id": "tmpsenior", "name": "Temp Senior", "role": "senior"},
+                    headers=admin_h)
+    assert r.status_code == 201
+    h = login(client, "tmpsenior")
+    assert client.post("/api/v1/outcomes", json={"subdivision": "KL", "lead_day": 2, "outcome": "correct"},
+                       headers=h).status_code == 201
+    assert client.patch("/api/v1/users/tmpsenior", json={"role": "observer"}, headers=admin_h).status_code == 200
+    r = client.post("/api/v1/outcomes", json={"subdivision": "KL", "lead_day": 2, "outcome": "correct"}, headers=h)
+    assert r.status_code == 403
 
 
 def test_non_admin_cannot_start_retraining(client, duty_h):

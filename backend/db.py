@@ -18,10 +18,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("VISHWAS_DB_PATH", os.path.join(HERE, "vishwas.db"))
 SCHEMA_PATH = os.path.join(HERE, "schema.sql")
 
-# id, name, role -- from frontend/index.html's mkUsers(). Demo accounts (the
-# first 4, matching DEMO[]) share the frontend's demo password; the rest get
-# distinct generated passwords printed once at seed time (not meant to be
-# guessable, but this is a hackathon demo, not a production credential store).
+# id, name, role -- from frontend/index.html's mkUsers(). All seeded accounts share the
+# frontend's demo password (hackathon demo, not a production credential store).
 SEED_USERS = [
     ("forecaster", "R. Nair", "duty"),
     ("senior", "S. Iyer", "senior"),
@@ -91,10 +89,9 @@ def init_db(subdivisions_path, reset=False):
         name_to_code = _name_to_code(subdivisions_path)
         name_to_id = {}
         for user_id, name, role in SEED_USERS:
-            pw = DEMO_PASSWORD if user_id in {"forecaster", "senior", "admin", "observer"} else DEMO_PASSWORD
             conn.execute(
                 "INSERT INTO users (id, name, role, password_hash, active) VALUES (?, ?, ?, ?, 1)",
-                (user_id, name, role, hash_password(pw)),
+                (user_id, name, role, hash_password(DEMO_PASSWORD)),
             )
             name_to_id[name] = user_id
         for date, region_name, lead_day, predicted, outcome, by_name in SEED_OUTCOMES:

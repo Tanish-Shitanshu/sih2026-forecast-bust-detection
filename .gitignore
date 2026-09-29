@@ -235,3 +235,6 @@ build/
 
 # Vishwas backend demo database (seeded fresh on first run, see backend/README.md)
 backend/vishwas.db
+
+# Bundles written by retraining jobs (committed baselines stay in ml/models/)
+backend/runtime_models/

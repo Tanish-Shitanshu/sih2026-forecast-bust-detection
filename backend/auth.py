@@ -48,21 +48,22 @@ class CurrentUser:
 
 
 def get_current_user(authorization: str | None = Header(None)) -> CurrentUser:
-    """Bearer token -> CurrentUser. Also re-checks the account is still
-    active on every request (a deactivated account's old tokens stop
-    working immediately, not just at next login)."""
+    """Bearer token -> CurrentUser. Re-reads the account on every request, so a
+    deactivation or role change applies immediately to tokens already issued."""
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(401, "Missing bearer token")
     token = authorization.split(" ", 1)[1]
     payload = _decode(token)
     conn = db.get_conn()
-    row = conn.execute("SELECT name, active FROM users WHERE id = ?", (payload["sub"],)).fetchone()
+    row = conn.execute("SELECT name, role, active FROM users WHERE id = ?", (payload["sub"],)).fetchone()
     conn.close()
     if row is None:
         raise HTTPException(401, "Unknown user")
     if not row["active"]:
         raise HTTPException(401, "This account is deactivated")
-    return CurrentUser(id=payload["sub"], role=payload["role"], name=row["name"])
+    # The role comes from the database, not the token: an admin's role change takes effect on
+    # the user's next request instead of when their 12-hour token expires.
+    return CurrentUser(id=payload["sub"], role=row["role"], name=row["name"])
 
 
 def require_role(*allowed: str):
