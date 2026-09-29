@@ -29,7 +29,8 @@ import pandas as pd
 
 from grid_utils import load_boundaries
 from imd_utils import imd_subdivision_daily
-from era5_utils import era5_subdivision_daily, build_era5_grid_map
+from era5_utils import (era5_subdivision_daily, build_era5_grid_map, era5_features_for_issue_date,
+                         hourly_tp_subdivision_daily, merge_tp_into_daily)
 from gefs_utils import gefs_daily_subdivision, build_gefs_grid_map
 from download_gefs import download_date
 from download_imd import download_year as download_imd_year
@@ -64,9 +65,18 @@ def main(year: int):
         print(f"[{year}] could not load {year + 1} IMD for December spillover ({e}); "
               f"late-December lead days beyond {year + 1}-01-xx will be dropped as missing")
 
-    print(f"[{year}] loading ERA5 features...")
+    print(f"[{year}] loading ERA5 features (this year + Dec of the previous year, "
+          f"for the Jan 1 -1-day lookback)...")
     era5_grid_map = build_era5_grid_map()
     era5_daily = era5_subdivision_daily(year, era5_grid_map)
+    merge_tp_into_daily(era5_daily, hourly_tp_subdivision_daily(year, era5_grid_map))
+    try:
+        era5_prev = era5_subdivision_daily(year - 1, era5_grid_map)
+        merge_tp_into_daily(era5_prev, hourly_tp_subdivision_daily(year - 1, era5_grid_map))
+        era5_daily.update(era5_prev)
+    except Exception as e:
+        print(f"[{year}] no {year - 1} ERA5 for the Jan 1 lookback ({e}); "
+              f"Jan 1 rows will have missing ERA5 features")
 
     print(f"[{year}] preparing GEFS grid map...")
     # ensure at least one GEFS file exists locally to read the grid from
@@ -115,7 +125,9 @@ def main(year: int):
 
         for code in codes:
             name = subdivisions_by_code[code]
-            era5_feats = era5_daily.get((init_date, code), {})
+            # -1 day shift: a forecast issued at 00Z on init_date can only
+            # have seen ERA5 data through init_date - 1 (see era5_utils.py).
+            era5_feats = era5_features_for_issue_date(era5_daily, init_date, code)
             for lead_day in range(1, 11):
                 observed_date = init_date + datetime.timedelta(days=lead_day)
                 forecast = gefs_result.get((lead_day, code))

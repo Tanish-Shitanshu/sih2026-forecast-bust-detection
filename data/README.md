@@ -1,12 +1,14 @@
 # Rainfall bust-detection dataset — SIH 2026 PS 26079 (Vishwas)
 
-**This is the GEFS+ERA5 backup/comparison track, not the primary NCMRWF
-track.** NCMRWF's own RDS portal was checked first and found to offer only
-reanalysis products (no Day 1–10 medium-range reforecast archive — see
-"Sources" below), so this dataset pairs NOAA's public GEFSv12 reforecast
-against IMD ground truth instead, as a working, fully-real alternative to
-train and validate against while a primary NCMRWF-sourced dataset is
-pursued separately.
+**This is the GEFS+ERA5 secondary/comparison track, not the primary one.**
+NCMRWF's real S2S data (Mohit's `ml-pipeline-v1` branch) is the primary
+forecast source — its `day00`–`day09` files give exactly the Day 1–10
+horizon this project needs. This dataset instead pairs NOAA's public
+GEFSv12 reforecast against IMD ground truth, as an independent second
+model to validate against. **The two tracks are never merged**: each has
+its own independently-fit bust magnitude threshold (see "Locked bust
+definition" below), computed separately on its own training years, so
+neither track's numbers leak into or get diluted by the other's.
 
 **What's in it.** One row per (forecast issue date, subdivision, lead day),
 pairing a GEFS rainfall forecast against what IMD's gridded rainfall says
@@ -35,15 +37,17 @@ and lead day.
 | [ERA5](https://cds.climate.copernicus.eu) (ECMWF, via Copernicus CDS) | Atmospheric features | Free account + personal token in `~/.cdsapirc`, via the `cdsapi` package. |
 | **NOAA GEFSv12 reforecast** (`s3://noaa-gefs-retrospective/`) | Forecast (`forecast_rain`) | Public S3, no login. |
 
-**Why GEFS and not NCMRWF RDS.** `rds.ncmrwf.gov.in` was checked first, per
-the task's instructions. It offers only *reanalysis* products — IMDAA
-(1979–2020) and NGFS (1999–2019) — plus one sub-seasonal-to-seasonal
-reforecast (1993–2015) that doesn't match our daily Day 1–10 medium-range
-horizon. This was confirmed from the site's own public dataset catalog,
-without ever hitting a registration wall. Per the task's fallback
-instruction, NOAA's public GEFSv12 reforecast was used instead: the
-control member (`c00`), total precipitation (`apcp_sfc`), for each
-forecast issue date.
+**Why this track exists alongside NCMRWF's own data.** `rds.ncmrwf.gov.in`
+was checked first, per the task's instructions, and its reanalysis
+products — IMDAA (1979–2020) and NGFS (1999–2019) — don't fit a daily
+Day 1–10 medium-range forecast need. At the time this track was built, its
+S2S product (1993–2015) looked like it wouldn't fit either; **that read
+was wrong and has since been corrected** — S2S's `day00`–`day09` files do
+give exactly Day 1–10, and that's exactly what Mohit's `ml-pipeline-v1`
+branch now uses as the primary track. This GEFS+ERA5 track was kept as-is
+rather than retired, since an independent second forecast source (GEFS
+control member `c00`, total precipitation `apcp_sfc`) is genuinely useful
+for comparison, not a stand-in for a missing primary source.
 
 ## Scope
 
@@ -125,13 +129,13 @@ Implemented in `data/scripts/compute_bust.py`.
 | `error` | `forecast_rain - observed_rain` | mm (signed; positive = forecast over-predicted) |
 | `is_bust` | Locked bust definition applied | boolean |
 | `trigger_reason` | Which part of the bust definition fired | `magnitude`, `category`, `both`, `none` |
-| `mslp` | ERA5 mean sea level pressure, subdivision-mean, daily mean of the 4 synoptic hours, at the **init date** | Pa |
-| `surface_pressure` | ERA5 surface pressure, same aggregation | Pa |
-| `dewpoint_2m` | ERA5 2m dewpoint temperature, same aggregation (moisture proxy) | K |
-| `temp_2m` | ERA5 2m temperature, same aggregation | K |
-| `wind_u10` | ERA5 10m eastward wind component, same aggregation | m/s |
-| `wind_v10` | ERA5 10m northward wind component, same aggregation | m/s |
-| `total_precipitation` | ERA5's own precipitation estimate (reanalysis, independent of both `forecast_rain` and `observed_rain`), subdivision-mean, daily **sum** of the 4 non-overlapping 6h accumulations | mm |
+| `mslp` | ERA5 mean sea level pressure, subdivision-mean, daily mean of the 4 synoptic hours, from **`date - 1`** | Pa |
+| `surface_pressure` | ERA5 surface pressure, same aggregation, from `date - 1` | Pa |
+| `dewpoint_2m` | ERA5 2m dewpoint temperature, same aggregation, from `date - 1` (moisture proxy) | K |
+| `temp_2m` | ERA5 2m temperature, same aggregation, from `date - 1` | K |
+| `wind_u10` | ERA5 10m eastward wind component, same aggregation, from `date - 1` | m/s |
+| `wind_v10` | ERA5 10m northward wind component, same aggregation, from `date - 1` | m/s |
+| `total_precipitation` | ERA5's own precipitation estimate (reanalysis, independent of both `forecast_rain` and `observed_rain`), subdivision-mean, true daily **sum of all 24 hourly values**, from `date - 1` | mm |
 
 Plus 4 columns beyond the requested handoff schema, kept because they're
 useful and don't conflict with it — flag if a strict schema match is
@@ -144,13 +148,71 @@ needed instead and these should be dropped:
 | `year` | Calendar year of `date` |
 | `split` | Whether this row's year was used to fit `magnitude_threshold_mm` — `train` or `test` |
 
-All ERA5 features describe atmospheric conditions **at forecast issue
-time** (not per lead day) — they're a feature of the forecast run itself,
-constant across a given date+subdivision's 10 lead-day rows.
+All ERA5 features describe atmospheric conditions **as of the day before
+the forecast's issue date** — see "Known issues, found and fixed" below
+for why — and are constant across a given date+subdivision's 10 lead-day
+rows (they're a feature of the forecast run itself, not of any one lead
+day).
 
 `bust_dataset.csv` (same data, gitignored — 135MB, over GitHub's 100MB
 hard limit) can be regenerated locally: `data/.venv/bin/python3 -c
 "import pandas as pd; pd.read_parquet('data/processed/bust_dataset.parquet').to_csv('data/processed/bust_dataset.csv', index=False)"`.
+
+## Known issues, found and fixed
+
+Mohit found two real bugs in the ERA5 side features after this dataset was
+first built. Neither affects `forecast_rain`, `observed_rain`, `error`,
+`is_bust`, or `trigger_reason` — only the 7 ERA5 columns were wrong and
+have been rebuilt (`data/scripts/fix_era5_leakage_and_precip.py`).
+
+**Leakage.** ERA5 features were originally attached at the forecast's own
+issue date, averaged/summed over all 4 of that day's synoptic hours
+(00/06/12/18Z). For a forecast issued at 00Z, three of those four
+snapshots happen *after* the forecast was made — the "feature" partly
+described the future. This is why Day-1 model performance looked inflated
+(0.635) before being caught: the issue-date ERA5 rainfall feature
+correlated 0.81 with next-day's actual observed rain, implausibly high for
+a same-day weather-state feature. Fixed by shifting every ERA5 feature to
+`issue_date - 1` (the most recent full day entirely in the past when a
+00Z forecast was made) — enforced centrally by
+`era5_utils.era5_features_for_issue_date`, so no future call site can
+reintroduce the leak by indexing the raw per-day dict directly.
+
+*Re-checked after the fix*: the same correlation (corrected
+`total_precipitation` vs. next-day `observed_rain`, full dataset, n=60,225)
+is now **0.653** — a real, sharp drop from 0.81, not just a smaller number.
+To confirm it's not still-leaky rather than just "lower," it was checked
+against an independent, ERA5-free baseline: IMD's own ground-truth rain
+autocorrelated with itself 2 days later is **0.565** (n=59,928, no
+ERA5/GEFS involved at all). 0.653 sits right next to that pure-persistence
+baseline — the fixed feature now behaves like real weather persistence,
+not like something that can see the future.
+
+**`total_precipitation` scale.** It averaged 0.61mm against IMD's 3.29mm
+on matched same-calendar-days (reproduced directly, not just taken on
+faith) — a ~5.4x undercount, matching Mohit's diagnosis almost exactly.
+Root cause: CDS delivers ERA5 `total_precipitation` as clean 1-hour
+increments even at hourly resolution, so the original 4-times-daily sample
+(00/06/12/18Z) only ever captured ~4 of the day's 24 hours (4/24 ≈ 0.167,
+close to the observed 0.185 ratio — the tell). Fixed by downloading all 24
+hourly values per day separately (`download_era5_hourly_tp.py`,
+`era5_utils.hourly_tp_subdivision_daily`) and summing those instead of the
+original 4. The old 4-sample summation was removed from
+`era5_subdivision_daily` entirely — not just stopped being called — so the
+wrong quantity can no longer be pulled from that function by mistake.
+
+*Re-checked after the fix*: corrected `total_precipitation` now averages
+3.891mm against IMD's 3.488mm on the same matched days (full dataset,
+n=60,225) — **ratio 1.116**, up from 0.185, and squarely in normal
+reanalysis-vs-gauge range rather than a 5.4x undercount. The
+same-day correlation was essentially unchanged (0.746 vs. 0.740 before) —
+expected, since this bug was a magnitude/scale error, not a shape error;
+fixing it corrected the mean without needing to touch the correlation.
+
+**Known gap**: fixing the leakage shift means `2015-01-01` needs ERA5 data
+from `2014-12-31`, which was never downloaded (the original pull started
+at 2015). Those specific rows (33 subdivisions × 10 lead days = 330 of
+602,580, 0.05%) have `NaN` ERA5 columns rather than a silently wrong value.
 
 ## Layout
 
@@ -158,7 +220,8 @@ hard limit) can be regenerated locally: `data/.venv/bin/python3 -c
 data/
   raw/
     imd/     IMD yearly NetCDF (ind{year}_rfp25.nc), + the raw and validated subdivision boundary GeoJSONs
-    era5/    era5_{year}.nc (actually zip archives — see era5_utils.py), extracted per-year copies under _extracted/
+    era5/    era5_{year}.nc (4x-daily instant fields; actually zip archives — see era5_utils.py), extracted per-year copies under _extracted/
+    era5_hourly_tp/  era5_tp_hourly_{year}.nc, 24 hourly total_precipitation values/day — the Bug 2 fix, download_era5_hourly_tp.py
     gefs/    GEFSv12 reforecast apcp_sfc GRIB2, one file per init date
   processed/
     subdivision_boundaries.geojson   33 subdivisions, our codes/names, WGS84
@@ -172,11 +235,13 @@ data/
     build_subdivision_boundaries.py  36 raw IMD subdivisions -> our 33
     atomic_io.py                     write-then-rename parquet helper (no truncated files on a kill)
     download_imd.py / download_gefs.py   download_gefs retries transient network errors with backoff
+    download_era5_hourly_tp.py       24-hourly total_precipitation pull, the Bug 2 fix
     imd_utils.py / era5_utils.py / gefs_utils.py   per-source loading + aggregation
     extract_features.py              sequential, per-year, resumable (checkpoints every 20 dates)
     extract_features_parallel.py     process-pool version (see below) — this is what was actually used
     compute_bust.py                  combines years, applies the locked bust formula
     patch_schema.py                  one-time: added wind_u10/wind_v10/total_precipitation, renamed columns to the handoff schema
+    fix_era5_leakage_and_precip.py   one-time: rebuilt all 7 ERA5 columns to fix Bugs 1 and 2 above
   .venv/     (gitignored) Python environment for these scripts
 ```
 
@@ -226,7 +291,16 @@ and were retried individually once conditions improved.
 ```
 data/.venv/bin/python3 data/scripts/build_subdivision_boundaries.py
 data/.venv/bin/python3 data/scripts/download_imd.py 2015 2016 2017 2018 2019
+data/.venv/bin/python3 data/scripts/download_era5_hourly_tp.py 2015 2016 2017 2018 2019
 data/.venv/bin/python3 data/scripts/extract_features_parallel.py 2015   # repeat per year; downloads GEFS as needed
 data/.venv/bin/python3 data/scripts/compute_bust.py 2015 2016 2017 2018 2019
-data/.venv/bin/python3 data/scripts/patch_schema.py 2015 2016 2017 2018 2019   # adds wind/tp, renames to handoff schema
+data/.venv/bin/python3 data/scripts/patch_schema.py 2015 2016 2017 2018 2019           # adds wind/tp, renames to handoff schema
+data/.venv/bin/python3 data/scripts/fix_era5_leakage_and_precip.py 2015 2016 2017 2018 2019   # fixes Bugs 1 and 2, see "Known issues" above
 ```
+
+A from-scratch run of `extract_features_parallel.py` no longer needs the
+`patch_schema.py` / `fix_era5_leakage_and_precip.py` follow-up steps at
+all — both fixes now live in `era5_utils.py` and are applied automatically
+during extraction. They're listed here because that's how this dataset's
+history actually went: built, then patched twice as bugs were found. A
+fresh rebuild only needs the first four commands.
