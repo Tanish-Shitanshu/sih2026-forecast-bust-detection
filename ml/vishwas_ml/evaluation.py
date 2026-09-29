@@ -70,3 +70,51 @@ def grouped(df, by, p_col="p", y_col="y", ref_col="p_clim", **kw):
             "precision_at_watch", "recall_at_watch", "brier", "brier_skill_vs_climatology", "ece", "catch_at_10pct"]
     out = pd.DataFrame(rows)
     return out[[c for c in cols if c in out.columns]]
+
+
+# ---------------------------------------------------------------- uncertainty
+
+def fast_ap(y, p):
+    """Average precision (same tie handling as sklearn), fast enough for bootstrap loops."""
+    y, p = np.asarray(y, float), np.asarray(p, float)
+    order = np.argsort(-p, kind="mergesort")
+    ys, ps = y[order], p[order]
+    tp = np.cumsum(ys)
+    last = np.r_[np.where(np.diff(ps))[0], len(ps) - 1]  # last index of each tied score
+    tp = tp[last]
+    if tp[-1] == 0:
+        return float("nan")
+    prec = tp / (last + 1)
+    rec = tp / tp[-1]
+    return float(np.sum(np.diff(np.r_[0, rec]) * prec))
+
+
+def block_bootstrap(y, preds, blocks, reps=500, seed=0, level=0.95):
+    """CIs for PR-AUC by resampling whole issue dates (rows from one forecast run are correlated,
+    so resampling rows would make intervals too narrow).
+
+    preds: {name: probabilities}. Returns {name: {"pr_auc", "lo", "hi"}} and, for every pair
+    (a, b), the CI of pr_auc[a] - pr_auc[b] with the share of resamples where a beats b."""
+    y = np.asarray(y, float)
+    uniq, inv = np.unique(np.asarray(blocks), return_inverse=True)
+    order = np.argsort(inv, kind="stable")
+    groups = np.split(order, np.cumsum(np.bincount(inv))[:-1])
+    rng = np.random.default_rng(seed)
+    samples = {k: [] for k in preds}
+    for _ in range(reps):
+        idx = np.concatenate([groups[i] for i in rng.integers(0, len(groups), len(groups))])
+        if y[idx].sum() == 0:
+            continue
+        for k, p in preds.items():
+            samples[k].append(fast_ap(y[idx], np.asarray(p)[idx]))
+    a = (1 - level) / 2 * 100
+    out = {k: {"pr_auc": fast_ap(y, preds[k]), "lo": float(np.nanpercentile(v, a)),
+               "hi": float(np.nanpercentile(v, 100 - a))} for k, v in samples.items()}
+    names = list(preds)
+    diffs = {}
+    for i, ka in enumerate(names):
+        for kb in names[i + 1:]:
+            d = np.asarray(samples[ka]) - np.asarray(samples[kb])
+            diffs[f"{ka} - {kb}"] = {"mean": float(np.nanmean(d)), "lo": float(np.nanpercentile(d, a)),
+                                     "hi": float(np.nanpercentile(d, 100 - a)), "p_better": float(np.mean(d > 0))}
+    return {"n_blocks": int(len(uniq)), "reps": reps, "pr_auc": out, "differences": diffs}

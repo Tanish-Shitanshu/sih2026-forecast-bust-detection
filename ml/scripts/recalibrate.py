@@ -20,11 +20,12 @@ from vishwas_ml.model import BustModel  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--source", default=None, help="synthetic | ncmrwf | gefs (default: config.json)")
     ap.add_argument("--outcomes", required=False)
     ap.add_argument("--models", default=None)
     ap.add_argument("--reset", action="store_true", help="remove the recalibration layer")
     a = ap.parse_args()
-    cfg = load_config()
+    cfg = load_config(source=a.source)
     d = Path(a.models or cfg["models_dir"])
     model = BustModel.load(d)
     if a.reset:

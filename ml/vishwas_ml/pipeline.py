@@ -21,7 +21,7 @@ import pandas as pd
 from . import __version__
 from .analogs import AnalogIndex, importance_weights
 from .config import ML_DIR, load_config, load_meta, subdivision_codes
-from .evaluation import core, grouped, reliability
+from .evaluation import block_bootstrap, core, grouped, reliability
 from .events import tag_events
 from .explain import global_importance
 from .features import FEATURES, FeatureBuilder
@@ -101,10 +101,19 @@ def evaluate(model, df, split, cfg, out_dir=None, log=print):
     per_sub = grouped(t, "subdivision_code", **kw)
     busts = t[t["y"] == 1]
     recall_by_trigger = {r: float((g["p"] >= kw["alert"]).mean()) for r, g in busts.groupby("trigger_reason")}
+    issue = df.loc[te, "date"].to_numpy()
+    boot = block_bootstrap(t["y"], {"model": t["p"], "forecast_only": t["p_fc"], "climatology": t["p_clim"]},
+                           issue, reps=cfg.get("bootstrap_reps", 500))
+    lead_ci = {}
+    for L, g in t.assign(issue=issue).groupby("lead_day"):
+        b = block_bootstrap(g["y"], {"model": g["p"]}, g["issue"], reps=cfg.get("bootstrap_reps", 500) // 2)
+        lead_ci[int(L)] = b["pr_auc"]["model"]
+    per_lead["pr_auc_lo"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["lo"])
+    per_lead["pr_auc_hi"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["hi"])
     rel = reliability(t["y"], t["p"])
     rel_raw = reliability(t["y"], model.predict_raw(X[te]))
     metrics = {"split_years": split["years"], "n_test": int(te.sum()), "overall": overall,
-               "recall_at_alert_by_trigger": recall_by_trigger,
+               "recall_at_alert_by_trigger": recall_by_trigger, "bootstrap": boot,
                "per_lead": per_lead.round(4).to_dict(orient="records"),
                "reliability_calibrated": rel.round(4).to_dict(orient="records"),
                "reliability_raw": rel_raw.round(4).to_dict(orient="records")}
@@ -150,6 +159,12 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     t0 = time.time()
     cfg = cfg or load_config()
     out_dir = Path(out_dir or cfg["models_dir"])
+    prev = out_dir / "metadata.json"
+    if prev.exists():
+        prev_src = json.loads(prev.read_text()).get("source")
+        if prev_src and prev_src != cfg.get("source"):
+            raise ValueError(f"{out_dir} holds a {prev_src!r} bundle; refusing to overwrite it with a "
+                             f"{cfg.get('source')!r} model (each forecast source keeps its own thresholds and model)")
     log(f"loading {data_path or cfg['data_path']}")
     df, report, timing, split, meta, path = prepare(cfg, data_path, log)
     tr, ca, te = split["train"], split["calib"], split["test"]
@@ -159,11 +174,12 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     thr = fit_thresholds(df[tr], cfg["bust"]["percentile"], cfg["bust"]["min_error_mm"])
     lab = label_frame(df, thr, cfg["bust"])
     y = lab["is_bust"].to_numpy()
-    agree = float((y == df["is_bust"].to_numpy()).mean())
-    log(f"  bust rate {y.mean():.3f} (train {y[tr].mean():.3f}, test {y[te].mean():.3f}); "
-        f"agreement with provided is_bust: {agree:.4f}")
+    known = df["is_bust"].notna().to_numpy()
+    agree = float((y[known] == df["is_bust"].to_numpy()[known].astype(bool)).mean()) if known.any() else None
+    log(f"  bust rate {y.mean():.3f} (train {y[tr].mean():.3f}, test {y[te].mean():.3f}); agreement with "
+        f"provided is_bust: {'n/a (column absent)' if agree is None else f'{agree:.4f}'}")
 
-    builder = FeatureBuilder(meta, cfg["bust"], timing).fit(df[tr], y[tr], thr)
+    builder = FeatureBuilder(meta, cfg["bust"], timing, cfg.get("era5_shift_days", 0)).fit(df[tr], y[tr], thr)
     X = builder.transform(df, oof=tr)
     booster, info = train_booster(X[tr], y[tr], X[ca], y[ca], cfg["lightgbm"])
     log(f"  LightGBM: {info['best_iteration']} trees in {info['train_seconds']} s")
@@ -188,8 +204,8 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     analogs = AnalogIndex().fit(X, lib, importance_weights(imp["features"]))
 
     model.metadata = {
-        "version": __version__, "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "data_path": _rel(path), "data_sha256_16": _sha(path), "data_report": report, "era5_timing": timing,
+        "source": cfg.get("source"), "version": __version__, "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "data_path": _rel(path), "data_sha256_16": _sha(path), "data_report": report, "era5_timing": timing, "era5_shift_days": cfg.get("era5_shift_days", 0),
         "split_years": split["years"], "bust_definition": cfg["bust"], "label_agreement_with_provided": agree,
         "features": FEATURES, "lightgbm": info, "importance": imp,
         "trust_ranges": feature_ranges(X[tr]), "summary_metrics": {k: v for k, v in m["model"].items()},

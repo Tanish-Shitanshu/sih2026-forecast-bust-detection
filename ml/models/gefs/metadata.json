@@ -1,0 +1,235 @@
+{
+  "source": "gefs",
+  "version": "0.1.0",
+  "trained_at": "2026-09-29T15:59:22+00:00",
+  "data_path": "data/gefs_pairs.parquet",
+  "data_sha256_16": "fe9ece37d5886681",
+  "data_report": {
+    "error_mismatch_rows": 0,
+    "obs_inconsistent_valid_dates": 0,
+    "trigger_reason_inconsistent": 0,
+    "absent_optional_columns": [
+      "forecast_rain_spread"
+    ],
+    "era5_timing_detected": "issue",
+    "rows": 602580,
+    "dates": 1826,
+    "date_range": [
+      "2015-01-01",
+      "2019-12-31"
+    ],
+    "provided_bust_rate": 0.15291247635168775,
+    "era5_missing_frac": {
+      "mslp": 0.0005,
+      "surface_pressure": 0.0005,
+      "dewpoint_2m": 0.0005,
+      "temp_2m": 0.0005,
+      "wind_u10": 0.0005,
+      "wind_v10": 0.0005,
+      "total_precipitation": 0.0005
+    },
+    "warnings": [
+      "optional columns absent (features will be NaN / labels recomputed): ['forecast_rain_spread']"
+    ]
+  },
+  "era5_timing": "issue",
+  "era5_shift_days": 0,
+  "split_years": {
+    "train": [
+      2015,
+      2016,
+      2017
+    ],
+    "calib": [
+      2018
+    ],
+    "test": [
+      2019
+    ]
+  },
+  "bust_definition": {
+    "min_error_mm": 25,
+    "percentile": 95,
+    "rain_threshold_mm": 2.5
+  },
+  "label_agreement_with_provided": 0.9999867237545222,
+  "features": [
+    "lead_day",
+    "forecast_rain",
+    "fc_log1p",
+    "fc_clim_ratio",
+    "fc_minus_rain_threshold",
+    "fc_jump",
+    "fc_jump_abs",
+    "fc_jump_gap",
+    "fc_neighbor_std",
+    "fc_spread",
+    "fc_spread_rel",
+    "fc_region_mean",
+    "fc_region_dev",
+    "mslp_z",
+    "surface_pressure_z",
+    "mslp_region_z",
+    "mslp_tendency",
+    "dewpoint_z",
+    "dewpoint_depression",
+    "dewpoint_depression_z",
+    "temp_z",
+    "wind_u_z",
+    "wind_v_z",
+    "wind_speed_z",
+    "era5_tp_rel",
+    "hist_bust_rate",
+    "bust_threshold_mm",
+    "clim_wet_frac",
+    "month_sin",
+    "month_cos",
+    "region_id"
+  ],
+  "lightgbm": {
+    "best_iteration": 170,
+    "train_seconds": 12.0
+  },
+  "importance": {
+    "features": {
+      "forecast_rain": 0.46244,
+      "clim_wet_frac": 0.43398,
+      "fc_minus_rain_threshold": 0.39096,
+      "fc_neighbor_std": 0.34255,
+      "fc_jump_abs": 0.31298,
+      "fc_region_mean": 0.22252,
+      "lead_day": 0.16879,
+      "month_cos": 0.09684,
+      "fc_log1p": 0.09174,
+      "fc_clim_ratio": 0.08648,
+      "hist_bust_rate": 0.05579,
+      "fc_jump": 0.03652,
+      "month_sin": 0.02944,
+      "region_id": 0.01952,
+      "fc_region_dev": 0.0182,
+      "dewpoint_depression": 0.01607,
+      "dewpoint_z": 0.01594,
+      "wind_speed_z": 0.00912,
+      "wind_u_z": 0.00494,
+      "dewpoint_depression_z": 0.00493,
+      "mslp_region_z": 0.0034,
+      "mslp_z": 0.0033,
+      "temp_z": 0.00265,
+      "era5_tp_rel": 0.00221,
+      "surface_pressure_z": 0.00196,
+      "wind_v_z": 0.00123,
+      "mslp_tendency": 0.00046,
+      "bust_threshold_mm": 9e-05,
+      "fc_jump_gap": 0.0,
+      "fc_spread": 0.0,
+      "fc_spread_rel": 0.0
+    },
+    "groups": {
+      "amount": 0.90064,
+      "history": 0.4453,
+      "lead_consistency": 0.34255,
+      "run_change": 0.33294,
+      "regional": 0.23618,
+      "lead": 0.16879,
+      "season": 0.11565,
+      "moisture": 0.02911,
+      "wind": 0.01161,
+      "pressure": 0.00714,
+      "temperature": 0.00265,
+      "recent_rain": 0.00221,
+      "ensemble": 0.0
+    }
+  },
+  "trust_ranges": {
+    "forecast_rain": [
+      0.0,
+      40.56666564941406
+    ],
+    "mslp_z": [
+      -2.656520128250122,
+      2.4011547565460205
+    ],
+    "dewpoint_z": [
+      -2.8910443782806396,
+      2.2105870246887207
+    ],
+    "temp_z": [
+      -2.7127370834350586,
+      2.2809338569641113
+    ],
+    "wind_speed_z": [
+      -2.144200086593628,
+      2.8661141395568848
+    ],
+    "dewpoint_depression_z": [
+      -2.4836456775665283,
+      2.6281840801239014
+    ]
+  },
+  "summary_metrics": {
+    "n": 120450,
+    "busts": 20118,
+    "base_rate": 0.1670236612702366,
+    "pr_auc": 0.5090241375474261,
+    "roc_auc": 0.8542460618379945,
+    "brier": 0.10434791142334364,
+    "ece": 0.01232090149027186,
+    "catch_at_10pct": 0.34615766974848394,
+    "accuracy_at_0_5": 0.849082606890826,
+    "brier_skill_vs_climatology": 0.1925453330418574,
+    "precision_at_alert": 0.5077558934585161,
+    "recall_at_alert": 0.4946316731285416,
+    "f1_at_alert": 0.5011078658475173,
+    "flagged_frac_at_alert": 0.16270651722706517,
+    "precision_at_watch": 0.3797739852398524,
+    "recall_at_watch": 0.8185207277065315,
+    "f1_at_watch": 0.5188254198304925,
+    "flagged_frac_at_watch": 0.35998339559983394
+  },
+  "baselines": {
+    "baseline_climatology": {
+      "n": 120450,
+      "busts": 20118,
+      "base_rate": 0.1670236612702366,
+      "pr_auc": 0.2886879870717752,
+      "roc_auc": 0.7116090309866046,
+      "brier": 0.1292306747280871,
+      "ece": 0.02437515487372504,
+      "catch_at_10pct": 0.1909732577791033,
+      "accuracy_at_0_5": 0.8329763387297634,
+      "brier_skill_vs_climatology": 0.0,
+      "precision_at_alert": 0.3707960834397616,
+      "recall_at_alert": 0.043294562083706134,
+      "f1_at_alert": 0.07753594160324032,
+      "flagged_frac_at_alert": 0.01950186799501868,
+      "precision_at_watch": 0.28147676349491596,
+      "recall_at_watch": 0.6150710806243165,
+      "f1_at_watch": 0.3862107710794488,
+      "flagged_frac_at_watch": 0.3649730178497302
+    },
+    "baseline_forecast_amount_only": {
+      "n": 120450,
+      "busts": 20118,
+      "base_rate": 0.1670236612702366,
+      "pr_auc": 0.46699322248922703,
+      "roc_auc": 0.8360441353891876,
+      "brier": 0.10881848831151236,
+      "ece": 0.005879285741859195,
+      "catch_at_10pct": 0.3268714583954667,
+      "accuracy_at_0_5": 0.8439767538397676,
+      "brier_skill_vs_climatology": 0.1579515580145644,
+      "precision_at_alert": 0.5132437860908863,
+      "recall_at_alert": 0.4064519335918083,
+      "f1_at_alert": 0.4536477115117892,
+      "flagged_frac_at_alert": 0.13227065172270652,
+      "precision_at_watch": 0.3745552035096271,
+      "recall_at_watch": 0.7638930311164132,
+      "f1_at_watch": 0.5026493098711323,
+      "flagged_frac_at_watch": 0.3406392694063927
+    }
+  },
+  "clip": [
+    0.01,
+    0.99
+  ]
+}

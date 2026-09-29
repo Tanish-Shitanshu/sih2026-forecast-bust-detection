@@ -23,7 +23,7 @@ def bundle(small_data, tmp_path_factory):
     d = tmp_path_factory.mktemp("bundle")
     data = d / "pairs.parquet"
     small_data.to_parquet(data, index=False)
-    cfg = load_config()
+    cfg = load_config(source="synthetic")
     cfg["data_path"], cfg["models_dir"] = data, d / "models"
     cfg["lightgbm"] = dict(cfg["lightgbm"], n_estimators=300)
     res = train_pipeline(cfg, log=lambda *a: None)

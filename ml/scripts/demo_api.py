@@ -7,16 +7,18 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from vishwas_ml.config import load_config  # noqa: E402
 from vishwas_ml.service import VishwasService, dumps  # noqa: E402
 
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--source", default=None, help="synthetic | ncmrwf | gefs (default: config.json)")
     ap.add_argument("--cycle", default=None, help="issue date; default = latest in the data")
     ap.add_argument("--subdivision", default=None, help="default = highest bust risk on this lead day")
     ap.add_argument("--lead", type=int, default=3)
     a = ap.parse_args()
-    svc = VishwasService()
+    svc = VishwasService(cfg=load_config(source=a.source))
     cm = svc.confidence_map(a.lead, a.cycle)
     code = a.subdivision or max(cm["items"], key=lambda x: x["bust_probability"])["code"]
     shown = dict(cm, items=cm["items"][:3], truncated=f"3 of {cm['count']} items shown")

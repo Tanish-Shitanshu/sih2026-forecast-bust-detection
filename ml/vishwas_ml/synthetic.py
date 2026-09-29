@@ -48,7 +48,9 @@ def shocks(rng, T, members, prob, dur, mag, share=0.7):
     return out
 
 
-def generate(seed=0, start="2020-01-01", end="2023-12-31", every=3):
+def generate(seed=0, start="2020-01-01", end="2023-12-31", every=3, ensemble=False):
+    """ensemble=True adds forecast_rain_spread: member spread that grows with the true error
+    variance (sigma), like a real ensemble, plus noise."""
     rng = np.random.default_rng(seed)
     meta = load_meta()
     subs = meta["subdivisions"]
@@ -146,23 +148,29 @@ def generate(seed=0, start="2020-01-01", end="2023-12-31", every=3):
     spur = rng.random(V.size) < np.clip(0.12 * ci, 0, 0.4)
     fc = np.where(spur & (fc < 2.5), fc + rng.uniform(2, 10, V.size), fc)
     fc = np.round(np.maximum(fc, 0), 1)
+    spread = np.round((fc + 1) * sigma * rng.lognormal(0, 0.35, V.size) * 0.8, 1)
 
     df = pd.DataFrame({
         "date": days[I], "subdivision_code": np.asarray(codes)[Sx], "lead_day": L,
         "forecast_rain": fc, "observed_rain": obs[V, Sx],
     })
     df["error"] = np.round(df["forecast_rain"] - df["observed_rain"], 1)
+    df["forecast_rain_spread"] = spread
     for k, a in era5.items():
         df[k] = a[I, Sx]
     df = df.round({"mslp": 1, "surface_pressure": 1, "dewpoint_2m": 2, "temp_2m": 2, "wind_u10": 2,
                    "wind_v10": 2, "total_precipitation": 6})
     df["is_bust"], df["trigger_reason"] = False, None
     df = coerce(df)
+    spread_by_row = df["forecast_rain_spread"].to_numpy()
 
     # Labels exactly as the data team will produce them: thresholds on training years only.
-    cfg = load_config()
+    cfg = load_config(source="synthetic")
     split = year_split(df, cfg["split"])
     thr = fit_thresholds(df[split["train"]], cfg["bust"]["percentile"], cfg["bust"]["min_error_mm"])
     lab = label_frame(df, thr, cfg["bust"])
     df["is_bust"], df["trigger_reason"] = lab["is_bust"], lab["trigger_reason"]
+    if ensemble:
+        df["forecast_rain_spread"] = spread_by_row
+        return df[COLUMNS + ["forecast_rain_spread"]]
     return df[COLUMNS]

@@ -14,11 +14,12 @@ from vishwas_ml.pipeline import train_pipeline  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--source", default=None, help="synthetic | ncmrwf | gefs (default: config.json)")
     ap.add_argument("--config", default=None)
     ap.add_argument("--data", default=None, help="override data_path from the config")
     ap.add_argument("--out", default=None, help="override models_dir from the config")
     a = ap.parse_args()
-    res = train_pipeline(load_config(a.config), data_path=a.data, out_dir=a.out)
+    res = train_pipeline(load_config(a.config, source=a.source), data_path=a.data, out_dir=a.out)
     m = res["metrics"]["overall"]["model"]
     print("\nTest-year summary (calibrated model)")
     for k in ("n", "base_rate", "pr_auc", "roc_auc", "brier_skill_vs_climatology", "ece",

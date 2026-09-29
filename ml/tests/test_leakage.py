@@ -85,3 +85,17 @@ def test_predictions_ignore_outcomes(bundle, col):
     p1 = m.predict(m.builder.transform(df))
     p2 = m.predict(m.builder.transform(df.assign(**{col: df[col].sample(frac=1, random_state=0).to_numpy()})))
     assert np.array_equal(p1, p2)
+
+
+def test_era5_shift_uses_previous_day_state(small_data):
+    """era5_shift_days=1: the issue-date state is read from the day before (for tables whose ERA5
+    columns are daily means/sums over the issue date, i.e. partly after a 00Z issue)."""
+    from vishwas_ml.features import issue_state
+
+    df = small_data[small_data["subdivision_code"] == "KL"]
+    st0 = issue_state(df, "issue").set_index("date")["mslp"]
+    st1 = issue_state(df, "issue", shift_days=1).set_index("date")["mslp"]
+    d = st0.index[5]
+    prev = d - pd.Timedelta(days=1)
+    assert (np.isnan(st1.loc[d]) if prev not in st0.index else st1.loc[d] == st0.loc[prev])
+    assert st1.loc[d] != st0.loc[d] or np.isnan(st1.loc[d])
