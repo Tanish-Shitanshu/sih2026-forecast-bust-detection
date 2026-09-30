@@ -4,6 +4,8 @@
     "synthetic": {"data_path": "data/synthetic_pairs.parquet", "models_dir": "models/synthetic"},
     "ncmrwf": {"data_path": "data/ncmrwf_pairs.parquet", "models_dir": "models/ncmrwf",
                "split": {"test_years": [2013, 2014, 2015], "calib_years": [2012]}},
+    "ncmrwf_neps": {"data_path": "data/ncmrwf_neps_pairs.parquet", "models_dir": "models/ncmrwf_neps",
+                    "split": {"test_years": [2024, 2025], "calib_years": [2023]}},
     "gefs": {"data_path": "../data/processed/bust_dataset.parquet", "models_dir": "models/gefs", "era5_shift_days": 0,
              "split": {"test_years": [2019], "calib_years": [2018]}}
   },

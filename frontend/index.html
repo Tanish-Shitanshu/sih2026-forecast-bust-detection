@@ -190,6 +190,18 @@ main:focus{outline:none}
 /* map */
 .carto{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(9,52px);gap:3px;background:var(--sky);padding:6px}
 .carto.sm{grid-template-rows:repeat(9,40px)}
+.carto.geo{display:block;background:var(--sky);padding:8px;height:auto;aspect-ratio:1000/1077;max-height:640px;margin:0 auto}
+.carto.geo.sm{max-height:430px}
+.carto.geo svg{width:100%;height:100%;display:block}
+.carto.geo .sd{stroke:var(--panel);stroke-width:1.4;cursor:default;transition:opacity .15s}
+.carto.geo .sd[role=button]{cursor:pointer}
+.carto.geo .sd:hover,.carto.geo .sd.hl{stroke:var(--ink);stroke-width:2.2}
+.carto.geo .sd.sel{stroke:var(--ink);stroke-width:3.2}
+.carto.geo .sd:focus{outline:none;stroke:#F2B300;stroke-width:3.6}
+.carto.geo .sd.dim{opacity:.28}
+.carto.geo .sd.pulse{stroke:#F2B300;stroke-width:3}
+.carto.geo .geo-labels text{font-size:19px;font-weight:700;pointer-events:none}
+
 .t{border:0;padding:4px 6px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;line-height:1.15;transition:background-color .3s,color .3s,opacity .2s;min-width:0}
 .t b{font-size:.75rem;font-weight:700;white-space:nowrap}
 .t span{font-size:.75rem;font-variant-numeric:tabular-nums}
@@ -384,20 +396,14 @@ details p{padding:10px 14px;margin:0}
 .rchips{display:flex;gap:6px;flex-wrap:wrap}
 .rchips span{padding:2px 9px;font-size:.75rem;font-weight:700;color:#fff}
 /* high contrast */
-body.hc{--bg:#000;--panel:#000;--text:#fff;--muted:#fff;--line:#fff;--sky:#000;--link:#FFE600;--blue:#000;--blue2:#000;--navy:#000;--tick:#000;--sel:#FFE600;--ink:#fff;--accent:#FFE600}
-body.hc a{text-decoration:underline}
-body.hc .nav{border-top:2px solid #fff;border-bottom:2px solid #fff}
-body.hc .tk-l,body.hc .search button,body.hc .day[aria-pressed="true"],body.hc .tab[aria-selected="true"],body.hc .fc[aria-pressed="true"],body.hc .ps[aria-selected="true"],body.hc .btn:not(.o){background:#fff;color:#000;border-color:#fff}
-body.hc .sel-card,body.hc .stat,body.hc .acct,body.hc .blk,body.hc .facts,body.hc .rolebar{border:2px solid #fff}
-body.hc .logo{background:#fff;color:#000}
-body.hc .oc button,body.hc .toast{border-color:#fff;background:#000;color:#fff}
-body.hc .pbar i,body.hc .rt-track i,body.hc .lprog i{background:#fff}
-body.hc .json{background:#000;color:#fff;border:2px solid #fff}
-body.hc .rph{background:#000;border-bottom:2px solid #fff}
-body.hc .rtl button[aria-selected="true"],body.hc .ii{background:#fff;color:#000}
-body.hc .ii svg{stroke:#000}
-body.hc .rp .lists>div{background:#000;border-top:1px solid #fff}
-body.hc .rp h4,body.hc .rp li{color:#fff}
+body.dark{--bg:#0E1621;--panel:#152131;--text:#E3EAF2;--muted:#A3B4C7;--line:#2A3B50;--sky:#1A2A3D;--tick:#22364E;--link:#8AB8FF;--blue:#2462C2;--blue2:#1B4E9E;--navy:#0B1A2E;--sel:#F2B300;--ink:#F1F5F9;--accent:#8AB8FF;color-scheme:dark}
+body.dark .tri{opacity:.85}
+body.dark .toast{background:#3A3310;border-color:#8A7414;color:#FFF3B0}
+body.dark .rp h4{color:var(--ink)}
+body.dark .rp li{color:var(--text)}
+body.dark .rp .l-can,body.dark .rp .l-no,body.dark .rp .l-see{background:var(--panel)}
+body.dark .json{background:#0B1320;color:#D7E3F4}
+body.dark input,body.dark select,body.dark textarea{background:var(--panel);color:var(--text);border-color:var(--line)}
 
 @media (max-width:1020px){
   .grid3,.grid2,.hero,.charts,.login-g,.two-eq,.two,.rtabs,.api-g{grid-template-columns:1fr}
@@ -428,6 +434,81 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
   .dgapt,.dflag{opacity:1;animation:none}
   .lprog.run i{width:100%}
 }
+
+/* ===== UX pass 2026-09-30 ===== */
+.stack{align-content:start}
+.doc-body dl{margin:0}.doc-body dt{font-weight:700;color:var(--ink);margin-top:10px}.doc-body dt:first-child{margin-top:0}.doc-body dd{margin:2px 0 0}
+.doc-body .tblwrap{margin:10px 0}
+.emblem-img{height:58px;width:auto;display:block}
+body.dark .emblem-img{filter:invert(1)}
+body.loading-data main::before{content:"Loading model output for the selected forecast cycle...";display:block;max-width:1360px;margin:18px auto 0;padding:12px 16px;background:var(--sky);border-left:4px solid var(--blue);font-weight:600}
+body.loading-data main section[data-view]{visibility:hidden}
+.wrap{max-width:1360px}
+.rolebar,.crumbs{display:none!important}
+.nav .wrap{display:flex;align-items:center;gap:12px}
+.nav ul{flex:1}
+.nav-cycle{display:flex;align-items:center;gap:8px;color:#fff;font-size:.8125rem;font-weight:600;white-space:nowrap;padding:6px 0}
+.nav-cycle select{font:inherit;font-weight:600;padding:4px 6px;border:1px solid rgba(255,255,255,.55);background:var(--blue2);color:#fff}
+.nav-tog{display:none;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6);font-weight:700;padding:6px 12px;margin:6px 0}
+.vt{margin-top:18px}
+.lead,.hnote{max-width:none}
+.grid3{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,.9fr);align-items:stretch}
+.grid2{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:stretch}
+.grid3>.panel,.grid2>.panel{min-width:0}
+.sel-card{background:var(--panel);color:var(--text);border:1px solid var(--line);border-top:4px solid var(--blue);display:flex;flex-direction:column}
+.sel-card .ph{color:var(--ink);border-bottom-color:var(--line)}
+.sname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.5em;color:var(--ink)}
+.scode{opacity:1;color:var(--muted);min-height:1.25em}
+.sbig{min-height:3.3rem;margin:2px 0 6px;color:var(--ink)}
+.sdl{grid-template-columns:minmax(10em,auto) 1fr;margin:10px 0 4px}
+.sdl dt{opacity:1;color:var(--muted)}
+.sdl dd{min-height:1.4em;color:var(--text)}
+#s-act{min-height:2.9em}
+.sh2{border-top:1px solid var(--line);color:var(--ink)}
+.fac{min-height:10.2em}
+.fac li{min-height:3.1em}
+.fac li .ft{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fac .fb{background:var(--sky)}
+#s-an{min-height:4.4em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:.875rem}
+#s-bm{min-height:2.8em}
+.oc button{color:var(--blue);border-color:var(--blue);background:var(--panel)}
+.oc button:hover:not(:disabled){background:var(--blue);color:#fff}
+.rolehint{color:var(--muted)}
+.doc{max-width:none}
+.doc-grid{display:grid;grid-template-columns:240px minmax(0,1fr);gap:32px;align-items:start;margin-top:10px}
+.toc{position:sticky;top:12px;border-left:3px solid var(--blue);padding:4px 0 4px 14px;background:var(--panel)}
+.toc b{display:block;font-size:.8125rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.toc a{display:block;padding:5px 0;font-size:.9rem;text-decoration:none}
+.doc-body h2{font-size:1.2rem;color:var(--ink);margin:26px 0 10px;scroll-margin-top:12px}
+.doc-body>h2:first-child{margin-top:0}
+.doc-body p,.doc-body li{max-width:100ch}
+.doc-body ul.b{list-style:disc;padding-left:22px}
+.doc-body ul.b li{margin:4px 0}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:10px 0}
+.kv div{background:var(--sky);border:1px solid var(--line);padding:10px 12px}
+.kv b{display:block;font-size:1.35rem;color:var(--ink)}
+.kv span{font-size:.8125rem;color:var(--muted)}
+.how{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:24px;align-items:stretch}
+#l-demo svg.demo{width:100%;height:auto;max-height:430px}
+.rtl button{--c:var(--blue)!important;--ct:var(--panel)!important}
+.rp{--c:var(--navy)!important;--ct:var(--panel)!important}
+.rp .l-see,.rp .l-can,.rp .l-no{background:var(--panel);border-top:1px solid var(--line)}
+.rp .l-can li::before,.rp .l-no li::before{background:var(--blue)}
+@media (max-width:1100px){.grid3{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}.grid3>.panel:last-child{grid-column:1/-1}}
+@media (max-width:860px){
+  .nav-tog{display:inline-block}
+  .nav .wrap{flex-wrap:wrap}
+  .nav ul{display:none;flex-basis:100%;flex-direction:column}
+  .nav.open ul{display:flex}
+  .nav-cycle{margin-left:auto}
+  .grid3,.grid2,.how,.doc-grid,.cols2,.hero,.two,.two-eq{grid-template-columns:1fr!important}
+  .grid3>.panel:last-child{grid-column:auto}
+  .toc{position:static}
+  .kv{grid-template-columns:repeat(2,1fr)}
+  .hdr-in{flex-wrap:wrap;gap:10px}
+  .tblwrap{overflow-x:auto}
+}
 </style>
 </head>
 <body class="out">
@@ -441,7 +522,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
     <div>
       <span class="ts" role="group" aria-label="Text size">
         <button type="button" data-size="87.5" aria-label="Decrease text size">A-</button><button type="button" data-size="100" aria-label="Default text size">A</button><button type="button" data-size="112.5" aria-label="Increase text size">A+</button>
-      </span><i class="vsep">|</i><button type="button" id="hc" aria-pressed="false" data-i18n="hc">High contrast</button><i class="vsep">|</i><span role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="hi" lang="hi" aria-pressed="false">हिंदी</button></span>
+      </span><i class="vsep">|</i><button type="button" id="hc" aria-pressed="false" data-i18n="hc">Dark mode</button><i class="vsep">|</i><span role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="hi" lang="hi" aria-pressed="false">हिंदी</button></span>
     </div>
   </div>
 </div>
@@ -449,7 +530,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 <header class="hdr">
   <div class="wrap hdr-in">
     <div class="gov">
-      <div class="emblem" role="img" aria-label="Emblem placeholder"><span>Emblem</span></div>
+      <img class="emblem-img" src="assets/emblem_of_india.svg" alt="State Emblem of India" width="36" height="58">
       <div class="gov-t">
         <span><strong lang="hi">पृथ्वी विज्ञान मंत्रालय</strong><i class="vsep">|</i>Ministry of Earth Sciences</span>
         <span><strong lang="hi">भारत सरकार</strong><i class="vsep">|</i>Government of India</span>
@@ -475,8 +556,8 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
   </div>
 </header>
 
-<nav class="nav" aria-label="Main"><div class="wrap"><ul id="navl"></ul></div></nav>
-<div class="rolebar" id="rolebar" hidden><div class="wrap rb-in"><span class="rb-badge" id="rb-badge"></span><b id="rb-ws"></b><span id="rb-name"></span><ul class="rb-chips" id="rb-chips"></ul><label class="cycle-pick-lbl" for="cycle-pick" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.8125rem">Forecast cycle<select id="cycle-pick" aria-label="Forecast cycle"></select></label></div></div>
+<nav class="nav" aria-label="Main" id="mainnav"><div class="wrap"><button type="button" class="nav-tog" id="nav-tog" aria-expanded="false" aria-controls="navl">Menu</button><ul id="navl"></ul><div class="nav-cycle" id="nav-cycle" hidden><label for="cycle-pick">Forecast cycle</label><select id="cycle-pick"></select></div></div></nav>
+<div class="rolebar" id="rolebar" hidden><div class="wrap rb-in"><span class="rb-badge" id="rb-badge"></span><b id="rb-ws"></b><span id="rb-name"></span><ul class="rb-chips" id="rb-chips"></ul></div></div>
 <div class="crumbs" id="crumbs" hidden><div class="wrap"><nav aria-label="Breadcrumb"><ol id="crumbs-l"></ol></nav></div></div>
 
 <main id="main" tabindex="-1">
@@ -491,7 +572,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       <p class="hp">Vishwas estimates how likely an already-issued NCMRWF and IMD medium-range forecast is to bust, and how much confidence to place in it, for each of 33 meteorological subdivisions and each lead day from Day 1 to Day 10, before the outcome is known. It does not forecast the weather.</p>
       <p class="hrot">Flags forecast busts during <span id="rot">monsoon depressions</span></p>
       <div class="acts" id="hero-cta"></div>
-      <p class="hnote">For NCMRWF duty forecasters, senior forecasters, administrators and observers. This prototype shows illustrative data and is not connected to a live feed.</p>
+      <p class="hnote">For NCMRWF duty forecasters, senior forecasters, administrators and observers. Signed-in pages show real model output for NCMRWF forecast cycles. The map on this page is a sample.</p>
     </div>
     <div class="panel">
       <div class="mh"><h2 class="mt" id="hm-h">Sample view, Day 3</h2><button type="button" class="play" id="lplay">Pause</button></div>
@@ -520,7 +601,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 
   <div class="wrap">
     <h2 class="sech">How it works</h2>
-    <div class="two" style="align-items:start">
+    <div class="how">
       <div>
         <div class="pipe" id="l-steps" role="tablist" aria-label="How it works"></div>
         <div class="pbar"><i id="l-pbar"></i></div>
@@ -529,8 +610,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       <div class="panel">
         <h3 class="mt" style="margin-bottom:6px">What a forecast bust looks like</h3>
         <div id="l-demo"></div>
-        <div class="acts"><button type="button" class="btn o" id="l-replay">Replay the example</button></div>
-        <p class="note">Illustrative example. Vishwas raises the flag when the forecast is issued, before the outcome is known.</p>
+        <p class="note">Schematic example: forecast and observed rainfall agree for four days, then part ways. Vishwas raises the flag when the forecast is issued, before the outcome is known.</p>
       </div>
     </div>
 
@@ -667,24 +747,26 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 <section id="v-model-trust" data-view="model-trust" hidden>
   <div class="wrap">
     <h1 class="vt" data-i18n="vt_trust">Model Trust</h1>
-    <p class="lead">Where the model itself is less sure, because of sparse historical analogs, an unfamiliar pattern or disagreement among ensemble members. It uses a separate violet scale and never the warning colors, so it cannot be mistaken for a weather warning.</p>
+    <p class="lead">Where the model itself is less sure: few past busts for this subdivision and lead day, a pattern unlike its training years, inputs outside the range it has seen, or its probability disagreeing with what similar past cases did. It uses a separate violet scale and never the warning colors, so it cannot be mistaken for a weather warning.</p>
     <div class="dayrow"><span class="dl">Lead day</span><div class="days" data-days role="group" aria-label="Lead day"></div></div>
     <div class="grid2">
-      <div class="panel">
+      <div class="stack">
+        <div class="panel">
         <h2 class="mt" id="tm-h" style="margin-bottom:6px">Model confidence map, Day 3</h2>
         <div class="carto" id="carto-trust"></div>
         <ul class="lg" id="lg-trust"></ul>
         <p class="note" id="tr-cap" role="status">Select a subdivision to see its model self-confidence and the main reason.</p>
       </div>
-      <div class="stack">
-        <div class="panel">
-          <h2 class="ph" id="dist-h">Subdivisions by confidence level</h2>
-          <ul class="dist" id="tr-dist"></ul>
-        </div>
         <div class="panel">
           <h2 class="ph" id="trend-h">Confidence across lead days</h2>
           <div id="trend"></div>
           <p class="note" id="trend-n"></p>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <h2 class="ph" id="dist-h">Subdivisions by confidence level</h2>
+          <ul class="dist" id="tr-dist"></ul>
         </div>
         <div class="panel">
           <h2 class="ph" id="tr-h">Lowest model confidence, Day 3</h2>
@@ -762,7 +844,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
             <div><label for="st-pct">Regional percentile</label><input id="st-pct" type="number" min="50" max="99"></div>
             <div><button class="btn" type="submit">Save settings</button></div>
           </div>
-          <p class="note">Saved values apply from the next retraining run. The illustrative figures in this prototype do not change.</p>
+          <p class="note">Saved values apply from the next retraining run.</p>
           <p class="err" id="st-msg" role="alert"></p>
         </form>
       </div>
@@ -786,33 +868,90 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 <section id="v-methodology" data-view="methodology" hidden>
   <div class="wrap doc">
     <h1 class="vt" data-i18n="vt_meth">Methodology</h1>
-    <p class="lead">Open a section to read it, then try the two interactive tools below.</p>
-    <details open><summary>What Vishwas does</summary><p>It looks at an already-issued NCMRWF and IMD forecast for Day 1 to Day 10 and estimates how likely that forecast is to bust, meaning a large deviation between the forecast and what actually happens, before the outcome is known. It flags which subdivisions and lead days deserve extra caution, so a duty forecaster can weigh the official guidance with calibrated confidence.</p></details>
-    <details><summary>What it does not do</summary><p>It does not forecast the weather itself, and it does not replace or override IMD or NCMRWF guidance. It does not issue public warnings, and it is not a substitute for the duty forecaster's judgment. It is a second opinion on how much to trust the first one.</p></details>
-    <details><summary>Model self-confidence</summary><p>Reported separately, on a violet scale that never uses the warning colors. It reflects how much historical precedent exists for the current pattern, not how severe the weather is expected to be.</p></details>
-    <details><summary>Forecast confidence</summary><p>Forecast confidence is 100% minus the bust probability. It answers a simple question: how far can the issued forecast be trusted for this subdivision and lead day? A subdivision at 12% forecast confidence is at Red, warning. It is different from model self-confidence, which measures how much precedent the model has for the pattern.</p></details>
-    <details><summary>Weather events</summary><p>Flagged subdivisions (Yellow and above) are tagged with the event most likely to cause the bust, using the event types named in the problem statement: monsoon depressions, heavy rainfall events, western disturbances, cyclones, heat waves, and break or active monsoon phases. In this prototype the tags are illustrative.</p></details>
-    <details><summary>Prototype status</summary><p>The figures in this prototype are illustrative. A fixed formula generates them so that they stay consistent from screen to screen. The working system replaces them with model output trained on the data sources listed under Data sources. Nothing here is connected to a live feed.</p></details>
+    <p class="lead">How Vishwas decides how far an NCMRWF rainfall forecast can be trusted, what it is trained on, how well it works and where it is weak.</p>
+    <div class="doc-grid">
+      <nav class="toc" aria-label="On this page"><b>On this page</b>
+        <a href="#m-what">What it does</a><a href="#m-bust">What counts as a bust</a><a href="#m-data">Data</a>
+        <a href="#m-steps">How an estimate is built</a><a href="#m-levels">Warning levels</a><a href="#m-conf">Two kinds of confidence</a>
+        <a href="#m-bigmiss">Big-miss watch</a><a href="#m-skill">How well it works</a><a href="#m-limits">Known limitations</a>
+      </nav>
+      <div class="doc-body">
+        <h2 id="m-what">What it does</h2>
+        <div class="cols2">
+          <div class="panel"><h3 class="mt">Does</h3><ul class="b">
+            <li>Takes an NCMRWF rainfall forecast that has already been issued, for Day 1 to Day 10.</li>
+            <li>Estimates, for each of 33 meteorological subdivisions and each lead day, the probability that it will bust, before the outcome is known.</li>
+            <li>Explains the estimate, shows the closest past case and says how much precedent the model has.</li></ul></div>
+          <div class="panel"><h3 class="mt">Does not</h3><ul class="b">
+            <li>Forecast the weather itself, or replace IMD or NCMRWF guidance.</li>
+            <li>Issue public warnings.</li>
+            <li>Replace the duty forecaster's judgement. It is a second opinion on how much to trust the first one.</li></ul></div>
+        </div>
 
-    <h2>How a bust-risk estimate is built</h2>
-    <div class="pipe" role="tablist" aria-label="Steps" id="pipe"></div>
-    <div class="pbar"><i id="pbar"></i></div>
-    <div class="panel"><p class="pbody" id="pbody" role="status"></p>
-      <div class="acts"><button type="button" class="btn o" id="p-prev">Previous step</button><button type="button" class="btn" id="p-next">Next step</button></div>
-    </div>
+        <h2 id="m-bust">What counts as a bust</h2>
+        <div class="panel"><p>A forecast busts when <b>either</b> condition holds (the two are checked separately and the trigger is recorded):</p>
+          <ul class="b"><li><b>Magnitude:</b> the error is at least 25 mm, or at least the subdivision's 95th-percentile error for that lead day, whichever is larger. The percentile is fitted on training years only.</li>
+          <li><b>Category:</b> the rain / no-rain call was wrong, using IMD's rainy-day line of 2.5 mm.</li></ul></div>
 
-    <h2>Reading the warning levels</h2>
-    <div class="panel">
-      <label for="lvl" style="font-weight:600">Bust probability: <output id="lvl-o">45</output>%</label>
-      <div class="lscale" id="lscale"><i style="flex:18;background:#1E7A3C"></i><i style="flex:20;background:#F2B300"></i><i style="flex:24;background:#E8720C"></i><i style="flex:38;background:#C62828"></i><span class="lmark" id="lmark" style="left:45%"></span></div>
-      <input class="rng" type="range" id="lvl" min="0" max="100" value="45" aria-label="Bust probability">
-      <div class="lres"><span class="chip" id="lvl-chip"></span><span id="lvl-band"></span></div>
-      <p style="margin-top:8px"><b>Recommended action:</b> <span id="lvl-act"></span></p>
+        <h2 id="m-data">Data</h2>
+        <div class="panel"><ul class="b">
+          <li><b>Forecasts:</b> NCMRWF's S2S reforecast archive (Unified Model coupled system, about 60 km), 1993 to 2015, one run per month, Days 1 to 10: 91,080 forecast rows.</li>
+          <li><b>Observations:</b> IMD gridded daily rainfall (0.25 degree), averaged over each subdivision using IMD's subdivision boundaries.</li>
+          <li><b>Weather state at issue time:</b> the forecast's own sea-level pressure, surface pressure and 10 m winds, plus the IMD rain observed the day before issue.</li>
+          <li><b>In progress:</b> NCMRWF's operational ensemble (NEPS, about 12 km, daily runs, 2017 to 2025) from the TIGGE archive, which will replace the 2015 limit.</li></ul></div>
+
+        <h2 id="m-steps">How a bust-risk estimate is built</h2>
+        <div class="pipe" role="tablist" aria-label="Steps" id="pipe"></div>
+        <div class="pbar"><i id="pbar"></i></div>
+        <div class="panel"><p class="pbody" id="pbody" role="status"></p>
+          <div class="acts"><button type="button" class="btn o" id="p-prev">Previous step</button><button type="button" class="btn" id="p-next">Next step</button></div>
+        </div>
+
+        <h2 id="m-levels">Reading the warning levels</h2>
+        <div class="cols2">
+          <div class="panel">
+            <label for="lvl" style="font-weight:600">Bust probability: <output id="lvl-o">45</output>%</label>
+            <div class="lscale" id="lscale"><i style="flex:18;background:#1E7A3C"></i><i style="flex:20;background:#F2B300"></i><i style="flex:24;background:#E8720C"></i><i style="flex:38;background:#C62828"></i><span class="lmark" id="lmark" style="left:45%"></span></div>
+            <input class="rng" type="range" id="lvl" min="0" max="100" value="45" aria-label="Bust probability">
+            <div class="lres"><span class="chip" id="lvl-chip"></span><span id="lvl-band"></span></div>
+            <p style="margin-top:8px"><b>Recommended action:</b> <span id="lvl-act"></span></p>
+          </div>
+          <div class="panel tblwrap"><table class="tbl">
+            <thead><tr><th>Level</th><th>Bust probability</th><th>Recommended action</th></tr></thead>
+            <tbody id="tier-tbl"></tbody>
+          </table></div>
+        </div>
+
+        <h2 id="m-conf">Two kinds of confidence</h2>
+        <div class="cols2">
+          <div class="panel"><h3 class="mt">Forecast confidence</h3><p>100% minus the bust probability: how far the issued forecast can be trusted for this subdivision and lead day. It uses the warning colours.</p></div>
+          <div class="panel"><h3 class="mt">Model self-confidence</h3><p>How much precedent the model has for the case: enough past busts for this subdivision and lead day, a familiar pattern, inputs inside the range it was trained on, and agreement with similar past cases. It uses a separate violet scale, never the warning colours.</p></div>
+        </div>
+
+        <h2 id="m-bigmiss">Big-miss watch</h2>
+        <div class="panel"><p>Most busts are rain / no-rain flips. A separate model estimates the risk that the forecast misses by a <b>large amount</b> (a magnitude bust) and flags it when that risk crosses a threshold set on held-out data. It is shown on the dashboard next to the bust probability and never changes it.</p></div>
+
+        <h2 id="m-skill">How well it works</h2>
+        <div class="panel">
+          <p>Evaluated on 2013 to 2015, years the model never saw in training (11,880 forecasts). About 1 in 6 forecasts busts in these years.</p>
+          <div class="kv">
+            <div><b>0.541</b><span>Bust-detection score (PR-AUC) of Vishwas</span></div>
+            <div><b>0.452</b><span>Same score using the forecast amount alone</span></div>
+            <div><b>0.272</b><span>Same score using past bust rates alone</span></div>
+            <div><b>0.02</b><span>Calibration error: a stated 40% is close to 40%</span></div>
+          </div>
+          <p>The big-miss watch raises the share of large misses caught at Alert or above from 41% to 75%, for 2.5% more flagged forecasts.</p>
+        </div>
+
+        <h2 id="m-limits">Known limitations</h2>
+        <div class="panel"><ul class="b">
+          <li><b>Days 1 to 3:</b> little gain over the raw forecast amount. The archive has one run a month, so the signal from how a forecast changes between runs is missing.</li>
+          <li><b>Large misses:</b> the bust probability is driven mostly by rain / no-rain flips; the big-miss watch helps, but extreme events can still be missed (for example Tamil Nadu on 2 December 2015).</li>
+          <li><b>Coastal and hilly subdivisions</b> (Coastal Karnataka, Kerala, Konkan and Goa) are the weakest: the 60 km model resolves their terrain-driven rain poorly.</li>
+          <li><b>Archive:</b> the reforecast archive ends in 2015, so the console replays past cycles rather than showing today's forecast.</li>
+          <li><b>Weather-event tags</b> are rule-based labels from the forecast's pressure, winds and season, not a trained model.</li></ul></div>
+      </div>
     </div>
-    <div class="panel tblwrap" style="margin-top:12px"><table class="tbl">
-      <thead><tr><th>Level</th><th>Bust probability</th><th>Recommended action</th></tr></thead>
-      <tbody id="tier-tbl"></tbody>
-    </table></div>
   </div>
 </section>
 
@@ -864,11 +1003,25 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
 <section id="v-help" data-view="help" hidden>
   <div class="wrap doc">
     <h1 class="vt" data-i18n="vt_help">Help</h1>
-    <h2>Accessibility</h2>
-    <p>Use A-, A and A+ in the top bar to change the text size, and High contrast for a black and white theme. Every page works with a keyboard. Each map tile has a text label that names the subdivision, its value and its warning level, so color is never the only signal.</p>
-    <h2>Roles and permissions</h2>
-    <p>Every person signs in with their own user ID and holds one role. Several people can hold the same role. Each role opens its own workspace: Shift desk, Review desk, Control room or Briefing.</p>
-    <div class="panel tblwrap wide"><table class="tbl perm">
+    <div class="doc-grid">
+      <nav class="toc" aria-label="On this page"><b>On this page</b>
+        <a href="#h-start">Getting started</a><a href="#h-roles">Roles and permissions</a><a href="#h-gloss">Glossary</a><a href="#h-a11y">Accessibility</a>
+      </nav>
+      <div class="doc-body">
+        <h2 id="h-start">Getting started</h2>
+        <div class="cols2">
+          <div class="panel"><ul class="b">
+            <li>Sign in with your user ID. Your role decides which workspace opens.</li>
+            <li>Pick the forecast cycle in the blue bar. Every page then shows that cycle.</li>
+            <li>On the dashboard, choose a lead day and select a subdivision on the map, or use the list below it.</li></ul></div>
+          <div class="panel"><ul class="b">
+            <li>The card on the right explains the estimate: the main factors, the closest past case and the recommended action.</li>
+            <li>After the day has verified, record what happened. A senior forecaster approves it before the model learns from it.</li>
+            <li>Model Trust shows where the model itself is less sure.</li></ul></div>
+        </div>
+        <h2 id="h-roles">Roles and permissions</h2>
+        <p>Every person signs in with their own user ID and holds one role. Several people can hold the same role. Each role opens its own workspace: Shift desk, Review desk, Control room or Briefing.</p>
+        <div class="panel tblwrap wide"><table class="tbl perm">
       <thead><tr><th>Capability</th><th>Duty forecaster</th><th>Senior forecaster</th><th>Administrator</th><th>Observer</th></tr></thead>
       <tbody>
         <tr><td>View the workspace, dashboard, regions, Model Trust and feedback log</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
@@ -878,8 +1031,8 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
         <tr><td>Set the bust definition and start retraining</td><td>No</td><td>No</td><td>Yes</td><td>No</td></tr>
       </tbody>
     </table></div>
-    <h2>Glossary</h2>
-    <dl>
+        <h2 id="h-gloss">Glossary</h2>
+        <div class="panel"><dl>
       <dt>Forecast bust</dt><dd>A large deviation between a forecast and what actually happens.</dd>
       <dt>Lead day</dt><dd>How many days ahead the forecast is for, from Day 1 to Day 10.</dd>
       <dt>Subdivision</dt><dd>One of the 33 meteorological subdivisions Vishwas monitors.</dd>
@@ -890,7 +1043,11 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       <dt>Historical analog</dt><dd>A past event with a similar forecast pattern, shown with how its forecast verified.</dd>
       <dt>Outcome</dt><dd>What a forecaster recorded after the fact: correct, incorrect or partial.</dd>
       <dt>Approved outcome</dt><dd>An outcome that a senior forecaster has checked. Only approved outcomes are used to improve the model.</dd>
-    </dl>
+    </dl></div>
+        <h2 id="h-a11y">Accessibility</h2>
+        <div class="panel"><p>Use A-, A and A+ in the top bar to change the text size, and Dark mode for a darker theme that is easier on the eyes on night shifts. Every page works with a keyboard. Each subdivision on the map has a text label with its name, value and warning level, so colour is never the only signal.</p></div>
+      </div>
+    </div>
   </div>
 </section>
 </main>
@@ -921,7 +1078,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
       <h2>Accessibility</h2>
       <ul>
         <li>Text size controls in the top bar</li>
-        <li>High contrast mode in the top bar</li>
+        <li>Dark mode in the top bar</li>
         <li>Every map value is also shown as text</li>
         <li>Keyboard and screen reader operable</li>
       </ul>
@@ -936,6 +1093,7 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
   <div class="wrap foot-b">Last reviewed: 30 September 2026<i class="vsep">|</i>Signed-in pages: model output replaying NCMRWF's 1993 to 2015 reforecast archive, not a live feed. Landing page and API samples: illustrative data.</div>
 </footer>
 
+<script src="india_map.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1081,9 +1239,9 @@ var NAVSETS={
 };
 var CHECKS=["Review every Red subdivision for Day 1 to Day 3","Cross-check Yellow subdivisions against the short-range nowcast","Check Model Trust for subdivisions with reduced confidence","Record outcomes for yesterday's flagged forecasts","Write handover notes for the next shift"];
 var PIPE=[
- {h:"Collect",b:"The archived forecast, the observed weather and the reanalysis are gathered for every past forecast."},
- {h:"Compare",b:"Each forecast is compared with what was observed. The difference is the forecast error, and large errors are labelled as busts."},
- {h:"Score",b:"Where the current forecast pattern resembles past patterns that busted, the bust probability rises. A separate value records how much precedent exists."},
+ {h:"Collect",b:"For every past NCMRWF forecast, the forecast rainfall and the forecast's own pressure and winds at issue time are gathered, with IMD's observed rainfall for each subdivision."},
+ {h:"Compare",b:"Each forecast is compared with what IMD observed. A large error, or a wrong rain / no-rain call, is labelled a bust."},
+ {h:"Score",b:"A gradient-boosted model, trained on older years only, learns which situations tend to bust. Its output is calibrated so that a stated 40% busts about 40% of the time, and a separate value records how much precedent exists."},
  {h:"Act",b:"The probability maps to a warning level and a recommended action. The forecaster records the outcome, and approved outcomes feed the next retraining."}
 ];
 var LSTEPS=[
@@ -1093,7 +1251,7 @@ var LSTEPS=[
  {h:"Forecaster acts and logs",b:"The duty forecaster reviews flagged subdivisions and records the outcome once it is known. A senior forecaster approves it."}
 ];
 var ROT=["monsoon depressions","heavy rainfall events","western disturbances","cyclones","heat waves","break and active monsoon phases"];
-var NOTICES=["Prototype with illustrative data, not connected to a live feed","Four roles: duty forecaster, senior forecaster, administrator and observer","Methodology, data sources and help are open to everyone","Text size and high contrast controls are in the top bar","Sign in to open your workspace, the dashboard, Model Trust and the feedback log"];
+var NOTICES=["Signed-in pages show model output for NCMRWF reforecast cycles","Four roles: duty forecaster, senior forecaster, administrator and observer","Methodology, data sources and help are open to everyone","Text size and dark mode controls are in the top bar","Sign in to open your workspace, the dashboard, Model Trust and the feedback log"];
 var FC=[8,14,22,38,52,62,55,40,28,18],OB=[7,13,20,34,30,18,20,25,24,17];
 var SRC=[
  {n:"ERA5 reanalysis",d:"ECMWF's global reanalysis of the atmosphere, published through the Copernicus Climate Change Service. It gives hourly estimates of atmospheric states from 1940 onward.",u:"A verification reference for past atmospheric states, so the pattern around each past forecast is known."},
@@ -1101,8 +1259,8 @@ var SRC=[
  {n:"NCMRWF NWP archives",d:"Archived numerical weather prediction runs from NCMRWF, the record of what was predicted.",u:"The forecast half of every forecast and observation pair, which builds the historical bust record."}
 ];
 var STAGES=["Preparing data","Training the model","Calibrating probabilities","Validating on held-out years"];
-var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"उच्च कंट्रास्ट",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n_home:"होम",n_over:"कार्यक्षेत्र",n_dash:"डैशबोर्ड",n_reg:"क्षेत्र",n_trust:"मॉडल विश्वसनीयता",n_fb:"प्रतिक्रिया लॉग",n_admin:"प्रशासन",n_meth:"कार्यप्रणाली",n_src:"डेटा स्रोत",n_api:"एपीआई",n_help:"सहायता",ws_duty:"शिफ्ट डेस्क",ws_senior:"समीक्षा डेस्क",ws_admin:"नियंत्रण कक्ष",ws_observer:"ब्रीफिंग",tk:"बुलेटिन",si:"साइन इन",so:"साइन आउट",vt_login:"साइन इन",vt_dash:"डैशबोर्ड",vt_reg:"क्षेत्रीय सारांश",vt_trust:"मॉडल विश्वसनीयता",vt_fb:"प्रतिक्रिया लॉग",vt_admin:"प्रशासन",vt_meth:"कार्यप्रणाली",vt_src:"डेटा स्रोत",vt_api:"एपीआई",vt_help:"सहायता"};
-var EN={si:"Sign in",so:"Sign out",n_home:"Home",n_over:"Workspace",n_dash:"Dashboard",n_reg:"Regions",n_trust:"Model Trust",n_fb:"Feedback Log",n_admin:"Administration",n_meth:"Methodology",n_src:"Data sources",n_api:"API",n_help:"Help",ws_duty:"Shift desk",ws_senior:"Review desk",ws_admin:"Control room",ws_observer:"Briefing"};
+var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"डार्क मोड",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n_home:"होम",n_over:"कार्यक्षेत्र",n_dash:"डैशबोर्ड",n_reg:"क्षेत्र",n_trust:"मॉडल विश्वसनीयता",n_fb:"प्रतिक्रिया लॉग",n_admin:"प्रशासन",n_meth:"कार्यप्रणाली",n_src:"डेटा स्रोत",n_api:"एपीआई",n_help:"सहायता",ws_duty:"शिफ्ट डेस्क",ws_senior:"समीक्षा डेस्क",ws_admin:"नियंत्रण कक्ष",ws_observer:"ब्रीफिंग",tk:"बुलेटिन",si:"साइन इन",so:"साइन आउट",vt_login:"साइन इन",vt_dash:"डैशबोर्ड",vt_reg:"क्षेत्रीय सारांश",vt_trust:"मॉडल विश्वसनीयता",vt_fb:"प्रतिक्रिया लॉग",vt_admin:"प्रशासन",vt_meth:"कार्यप्रणाली",vt_src:"डेटा स्रोत",vt_api:"एपीआई",vt_help:"सहायता"};
+var EN={si:"Sign in",so:"Sign out",n_home:"Home",n_over:"Workspace",n_dash:"Dashboard",n_reg:"Regions",n_trust:"Model Trust",n_fb:"Feedback Log",n_admin:"Administration",n_meth:"Methodology",n_src:"Data sources",n_api:"API",n_help:"Help",ws_duty:"Shift desk",ws_senior:"Review desk",ws_admin:"Control room",ws_observer:"Briefing",hc:"Dark mode"};
 
 var EVENTS=["monsoon depression","heavy rainfall event","western disturbance","cyclone","heat wave","break or active monsoon phase"];
 function setOf(a){var o={};a.forEach(function(k){o[k]=1});return o}
@@ -1296,32 +1454,49 @@ function legendHtml(mode){
   if(mode==="conf")return TIERS.map(function(x){return '<li><i style="background:'+x.bg+'"></i>'+x.word.charAt(0).toUpperCase()+x.word.slice(1)+' forecast confidence ('+x.band2+')</li>'}).join("");
   return (mode==="trust"?VIO.map(function(v){return '<li><i style="background:'+v.bg+'"></i>'+v.lab+'</li>'}):TIERS.map(function(x){return '<li><i style="background:'+x.bg+'"></i>'+x.lab+' ('+x.band+')</li>'})).join("");
 }
+/* Geographic map of the 33 IMD meteorological subdivisions (paths from india_map.js, generated
+   from IMD's subdivision boundaries). Same interface as before: paint / hl / pulse / flash. */
 function makeMap(el,interactive,onPick,onHover){
-  var tl={};
+  var G=window.INDIA_MAP,NS="http://www.w3.org/2000/svg",tl={};
+  el.innerHTML="";el.classList.add("geo");
+  var svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 0 "+G.w+" "+G.h);svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+  svg.setAttribute("role","group");svg.setAttribute("aria-label","Map of India's meteorological subdivisions");
+  var gShapes=document.createElementNS(NS,"g"),gLabels=document.createElementNS(NS,"g");
+  gLabels.setAttribute("class","geo-labels");gLabels.setAttribute("aria-hidden","true");
+  svg.appendChild(gShapes);svg.appendChild(gLabels);el.appendChild(svg);
   SUBS.forEach(function(s){
-    var b=document.createElement(interactive?"button":"div");
-    if(interactive)b.type="button";
-    b.className="t";b.style.gridColumn=String(s.col);b.style.gridRow=String(s.row);
-    var a=document.createElement("b"),v=document.createElement("span");
-    a.textContent=s.code;b.appendChild(a);b.appendChild(v);
-    if(interactive)b.addEventListener("click",function(){onPick(s.id)});
-    if(onHover){
-      b.addEventListener("mouseenter",function(){onHover(s.id,true)});b.addEventListener("mouseleave",function(){onHover(s.id,false)});
-      if(interactive){b.addEventListener("focus",function(){onHover(s.id,true)});b.addEventListener("blur",function(){onHover(s.id,false)})}
+    var d=G.paths[s.code];if(!d)return;
+    var p=document.createElementNS(NS,"path");p.setAttribute("d",d);p.setAttribute("class","sd");
+    if(interactive){
+      p.setAttribute("tabindex","0");p.setAttribute("role","button");
+      p.addEventListener("click",function(){onPick(s.id)});
+      p.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();onPick(s.id)}});
     }
-    el.appendChild(b);tl[s.id]={el:b,v:v};
+    if(onHover){
+      p.addEventListener("mouseenter",function(){onHover(s.id,true)});p.addEventListener("mouseleave",function(){onHover(s.id,false)});
+      if(interactive){p.addEventListener("focus",function(){onHover(s.id,true)});p.addEventListener("blur",function(){onHover(s.id,false)})}
+    }
+    var t=document.createElementNS(NS,"title");p.appendChild(t);
+    gShapes.appendChild(p);
+    var L=G.labels[s.code],lab=null;
+    if(L&&(G.areas[s.code]||0)>1.2){  // label the larger subdivisions; small ones via hover/tooltip
+      lab=document.createElementNS(NS,"text");lab.setAttribute("x",L[0]);lab.setAttribute("y",L[1]);
+      lab.setAttribute("text-anchor","middle");lab.setAttribute("dominant-baseline","middle");gLabels.appendChild(lab);
+    }
+    tl[s.id]={el:p,t:t,lab:lab};
   });
   return {
     paint:function(D,mode,selId,dimFn){
       var trust=mode==="trust",conf=mode==="conf";
       D.forEach(function(d){
-        var x=tl[d.s.id];
-        x.el.style.backgroundColor=trust?d.v.bg:d.t.bg;
-        x.el.style.color=trust?d.v.fg:d.t.fg;
-        x.v.textContent=(trust?d.conf:conf?d.fc:d.pct)+"%";
+        var x=tl[d.s.id];if(!x)return;
+        x.el.style.fill=trust?d.v.bg:d.t.bg;
+        var val=(trust?d.conf:conf?d.fc:d.pct)+"%";
+        var txt=trust?("model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()):conf?("forecast confidence "+d.fc+"%, "+d.t.word+" ("+d.t.lab+")"):(d.pct+"% bust probability, "+d.t.lab);
+        x.t.textContent=d.s.name+": "+txt;
+        if(x.lab){x.lab.textContent=val;x.lab.style.fill=trust?d.v.fg:d.t.fg}
         if(interactive){
-          var txt=trust?("model self-confidence "+d.conf+"%, "+d.v.lab.toLowerCase()):conf?("forecast confidence "+d.fc+"%, "+d.t.word+" ("+d.t.lab+")"):(d.pct+"% bust probability, "+d.t.lab);
-          x.el.title=d.s.name+": "+txt;
           x.el.setAttribute("aria-label",d.s.name+", "+txt);
           x.el.classList.toggle("sel",selId===d.s.id);
           x.el.setAttribute("aria-pressed",selId===d.s.id?"true":"false");
@@ -1329,9 +1504,9 @@ function makeMap(el,interactive,onPick,onHover){
         x.el.classList.toggle("dim",!!(dimFn&&dimFn(d)));
       });
     },
-    hl:function(id,on){tl[id].el.classList.toggle("hl",!!on)},
+    hl:function(id,on){if(tl[id])tl[id].el.classList.toggle("hl",!!on)},
     pulse:function(id){Object.keys(tl).forEach(function(k){tl[k].el.classList.toggle("pulse",+k===id)})},
-    flash:function(id){var e=tl[id].el;e.classList.remove("flash");void e.offsetWidth;e.classList.add("flash")}
+    flash:function(id){var e=tl[id]&&tl[id].el;if(!e)return;e.classList.remove("flash");void e.getBBox();e.classList.add("flash")}
   };
 }
 var mapHome,mapDash,mapTrust;
@@ -1361,6 +1536,7 @@ function paintNav(){
 }
 function paintRoleBar(){
   var el=$("#rolebar");
+  $("#nav-cycle").hidden=!S.user;
   if(!S.user){el.hidden=true;return}
   var r=ROLES[S.user.role];
   el.hidden=false;el.style.borderLeftColor=r.color;
@@ -1433,7 +1609,13 @@ function onRoute(first){
     try{h.focus({preventScroll:true})}catch(e){}
   }
 }
+var DATA_VIEWS={overview:1,dashboard:1,regions:1,"model-trust":1,feedback:1};
 function renderView(r){
+  // Signed-in views paint only real model output: until the cycle has loaded, show a loading banner
+  // (afterSignIn re-renders the route when the data arrives).
+  var waiting=!!(DATA_VIEWS[r]&&S.user&&!RCACHE[rKey(S.day)]);
+  document.body.classList.toggle("loading-data",waiting);
+  if(waiting)return;
   if(r==="home"){paintLandingStatic();paintLanding();startLanding()}
   else if(r==="login"){
     var n=$("#lnote");
@@ -1520,6 +1702,7 @@ function startLanding(){
   landT.push(setInterval(function(){S.rot=(S.rot+1)%ROT.length;paintRot()},2800));
   landT.push(setInterval(function(){if(!S.landStepUser){S.landStep=(S.landStep+1)%LSTEPS.length;paintLandStep()}},3500));
   landT.push(setInterval(function(){if(!S.landRoleUser){S.landRole=(S.landRole+1)%ROLE_KEYS.length;paintLandRole()}},6000));
+  landT.push(setInterval(paintDemo,9000));  // the example replays itself
   paintLanding();
 }
 function stopLanding(){landT.forEach(clearInterval);landT=[]}
@@ -1665,7 +1848,7 @@ function paintDash(){
   $("#dm-expl").textContent=conf?"Forecast confidence is 100% minus the bust probability. It shows how far to trust the issued forecast. It is separate from model self-confidence.":"Bust probability is the chance that the issued forecast will be badly wrong.";
   paintDmTabs();
   $("#ev-f").value=S.evF;
-  $("#ev-n").textContent=S.evF==="all"?"Yellow, Orange and Red subdivisions are tagged with their likely event. Tags are illustrative.":D.filter(function(x){return x.ev===S.evF}).length+" subdivisions flagged for "+S.evF+" on Day "+S.day+". Other tiles are dimmed.";
+  $("#ev-n").textContent=S.evF==="all"?"Yellow, Orange and Red subdivisions are tagged with their likely event. Tags are rule-based, from the forecast pressure, winds and season.":D.filter(function(x){return x.ev===S.evF}).length+" subdivisions flagged for "+S.evF+" on Day "+S.day+". Other tiles are dimmed.";
   paintDays();
   var d=byId(D,S.sel),s=d.s;
   $("#s-name").textContent=s.name;$("#s-code").textContent="Code "+s.code;
@@ -1684,7 +1867,7 @@ function paintDash(){
     if(S.day!==selDay||!S.sel||byId(D,S.sel).s.code!==selCode)return; // superseded by a later selection
     $("#s-fac").innerHTML=ex.factors.map(function(f){
       var up=f.direction==="raises",mag=Math.round(f.contribution_percent);
-      return '<li>'+esc(f.feature)+'<div class="fr"><span class="fb"><i style="width:'+Math.min(100,mag*4)+'%;background:'+(up?"#FFB4A8":"#9CC9FF")+'"></i></span><span class="fv">'+(up?"+":"-")+mag+'%</span></div></li>';
+      return '<li><span class="ft">'+esc(f.feature)+'</span><div class="fr"><span class="fb"><i style="width:'+Math.min(100,mag*4)+'%;background:'+(up?"#FFB4A8":"#9CC9FF")+'"></i></span><span class="fv">'+(up?"+":"-")+mag+'%</span></div></li>';
     }).join("");
     var a=ex.closest_analog;
     $("#s-an").textContent=a.date+", "+a.description+". Outcome: "+a.outcome+".";
@@ -2052,7 +2235,6 @@ function wire(){
   buildDays();
   $$(".playbtn").forEach(function(b){b.addEventListener("click",function(){if(S.auto){touch()}else{S.touched=false;startAuto()}})});
   $("#lplay").addEventListener("click",function(){S.landPaused=!S.landPaused;paintLanding()});
-  $("#l-replay").addEventListener("click",paintDemo);
   $$(".tk-b").forEach(function(b){b.addEventListener("click",function(){var tk=b.closest(".ticker"),p=tk.classList.toggle("paused");b.textContent=p?"Play":"Pause"})});
   $$("#oc button").forEach(function(b){b.addEventListener("click",function(){record(b.dataset.oc)})});
   $("#skip").addEventListener("click",function(e){e.preventDefault();var m=$("#main");m.focus();try{m.scrollIntoView()}catch(x){}});
@@ -2177,7 +2359,11 @@ function wire(){
   $("#lvl").addEventListener("input",function(){paintLevel(+$("#lvl").value)});
   $("#pr").addEventListener("input",paintLabel);$("#ob").addEventListener("input",paintLabel);
   $$("[data-size]").forEach(function(b){b.addEventListener("click",function(){document.documentElement.style.fontSize=b.dataset.size+"%"})});
-  $("#hc").addEventListener("click",function(){var on=document.body.classList.toggle("hc");$("#hc").setAttribute("aria-pressed",on?"true":"false")});
+  var setDark=function(on){document.body.classList.toggle("dark",on);$("#hc").setAttribute("aria-pressed",on?"true":"false");try{localStorage.setItem("vishwas.dark",on?"1":"0")}catch(e){}};
+  try{if(localStorage.getItem("vishwas.dark")==="1")setDark(true)}catch(e){}
+  $("#hc").addEventListener("click",function(){setDark(!document.body.classList.contains("dark"))});
+  $("#nav-tog").addEventListener("click",function(){var n=$("#mainnav"),on=!n.classList.contains("open");n.classList.toggle("open",on);this.setAttribute("aria-expanded",on?"true":"false")});
+  $("#navl").addEventListener("click",function(e){if(e.target.closest("a"))$("#mainnav").classList.remove("open")});
   $$("[data-i18n]").forEach(function(e){if(!(e.dataset.i18n in EN))EN[e.dataset.i18n]=e.textContent});
   $$("[data-lang]").forEach(function(b){b.addEventListener("click",function(){
     S.lang=b.dataset.lang;
