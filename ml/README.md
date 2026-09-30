@@ -87,7 +87,7 @@ svc.confidence_map(lead_day=3)
 
 For live use, construct `VishwasService(history=df)` with the latest rows. The table needs no outcome columns, but it must include the previous ~10 days of issues, which the run-to-run features use.
 
-## Current metrics: NCMRWF (real data)
+## Current metrics: NCMRWF (real data), model v2
 
 **Setup:**
 - NCMRWF S2S rain + MSLP / surface pressure / 10 m winds, 1993–2015, 12 runs a year.
@@ -96,25 +96,45 @@ For live use, construct `VishwasService(history=df)` with the latest rows. The t
 - Calibration year 2012; **test years 2013–2015** (36 runs, 11,880 rows).
 - Base rate is 16.6%. 95% CIs come from a block bootstrap over the 36 issue dates.
 
-| | PR-AUC [95% CI] | ROC-AUC | Brier skill vs clim. | ECE | Precision @ alert | Recall @ alert | Accuracy @ 0.5 |
-|---|---|---|---|---|---|---|---|
-| **Model** | **0.534** [0.499, 0.578] | 0.864 | **0.230** | 0.021 | 0.546 | **0.518** | 0.857 |
-| Forecast amount + lead only | 0.452 [0.423, 0.489] | 0.835 | 0.171 | 0.012 | 0.522 | 0.395 | 0.847 |
-| Climatology (historical rate) | 0.272 [0.243, 0.296] | 0.682 | 0 | 0.018 | 0.392 | 0.010 | 0.834 |
+| | PR-AUC [95% CI] | ROC-AUC | Brier skill vs clim. | ECE | Precision @ alert | Recall @ alert |
+|---|---|---|---|---|---|---|
+| **Model v2** | **0.541** [0.507, 0.584] | 0.864 | 0.230 | 0.020 | 0.517 | 0.555 |
+| Model v1 (before 2026-09-30) | 0.534 [0.499, 0.578] | 0.864 | 0.230 | 0.021 | 0.546 | 0.518 |
+| Forecast amount + lead only | 0.452 | 0.835 | 0.171 | 0.012 | 0.522 | 0.395 |
+| Climatology | 0.272 | 0.682 | 0 | 0.018 | 0.392 | 0.010 |
 
-**Model minus forecast-only: +0.084 PR-AUC, 95% CI [+0.062, +0.109]**, better in 100% of resamples.
+**Model v2 minus v1** (paired, same test years): **+0.007 [+0.002, +0.012]**. v2 minus forecast-only: +0.091 [+0.070, +0.114].
 
-**What the numbers say:**
-- **Lead day.** At Days 1–3 the model is no better than the forecast amount alone (Day 1: 0.478 vs 0.479). The gain appears from Day 5 onward (Day 5: 0.570 vs 0.456; Day 7: 0.491 vs 0.373).
-- **Trigger type.** At Orange+ it catches **53% of rain/no-rain busts but only 30% of magnitude busts**. Large misses are the hard case.
-- **Where it works.**
-  - Best on the large NW plains: Haryana/Delhi 0.76, Punjab 0.76, West UP 0.73.
-  - Weakest where the resolution limitation predicts: Coastal Karnataka (alert recall 13%), Kerala 0.42, Konkan & Goa 0.45.
-  - Gujarat is also low (0.26), but its base rate is only 6.7%.
-- **Inputs.** The NCMRWF weather variables add little: mean |SHAP| is 0.05 for pressure and 0.03 for wind, against 1.22 for forecast amount. Skill comes mainly from the forecast itself, how it varies across the run, regional context and each subdivision's bust history.
-- **Accuracy is not the headline.** Climatology scores 83% accuracy while catching 1% of busts.
+**PR-AUC by lead day (v2):** D1 0.489, D2 0.545, D3 0.471, D4 0.557, D5 0.579, D6 0.495, D7 0.486, D8 0.555, D9 0.631, D10 0.594.
 
-Per-lead and per-subdivision tables are in `models/ncmrwf/evaluation/`. Retrain with `python scripts/train.py --source ncmrwf`.
+**Big-miss head (new, separate from the bust probability):**
+- It's a calibrated model of *magnitude* busts, with a flag threshold chosen on the calibration year for 15% precision. Exposed at `GET /api/v1/big-miss` and `action.big_miss_watch`.
+- On test: of 135 magnitude busts, the main Orange+ alert catches **41.5%**; the alert **or** the big-miss flag catches **74.8%**.
+- Cost: **+2.5%** extra flagged rows; 20% of the head's flags are real magnitude busts.
+
+## Model improvement pass (2026-09-30): what was tried
+
+**Protocol:**
+- Selection used only the validation years 2010–2012 (train 1993–2008, calibrate 2009). The 2013–2015 rows were dropped before selection.
+- The chosen variants were then evaluated **once** on 2013–2015.
+- Code: `experiments/ncmrwf_improve.py`. Results: `experiments/results/select.csv` (validation, with paired CIs), `final.csv` and `final_bootstrap.json` (test).
+
+| Weak spot | Tried | Validation | Test (once) | Outcome |
+|---|---|---|---|---|
+| **Days 1–3** | Diagnosed first | Not blind: PR-AUC at Days 1–3 ≈ Days 4–10. 90% of Day 1–3 busts are rain/no-rain flips; the forecast amount already carries the signal; the run-to-run feature is dead (monthly inits) | | Explains the "no gain over forecast-only" |
+| | NCMRWF per-lead pressure/wind, IMD rain over the prior 1/3/7 days, interactions, per-lead-band models, terrain/coast features + coastal/inland calibration, combinations with GEFS | Several significant (up to +0.028 at Days 1–3) | Terrain/coast + cluster calibration: Days 1–3 +0.009 [−0.001, +0.020]; feature set + bands: +0.001 | Small, borderline gain; **the lead-1–3 gap is mostly a signal limit of monthly S2S runs** |
+| **Magnitude busts** | Class weights ×3/×6/×12, positive weight, both | Recall up to 41%, but PR-AUC −0.014 to −0.037 and coastal −0.06 to −0.11 (all significant) | | **Rejected** |
+| | **Separate big-miss head** | +6% flags → recall 21% → 65% | recall 36% → 64% (+1.7% flags) | **Shipped** |
+| **Coastal (CST.KA, KL, KNK/GA)** | Hypsometric elevation + coastal flag; coastal/inland calibration; both; coastal sample weight ×2 | All null | Coastal +0.008 [−0.006, +0.026] | **Not solved:** likely a resolution limit of the ~60 km model |
+| **Data scarcity** | GEFS rows pooled (weights 0.1/0.3/1.0), GEFS pre-train then fine-tune | Pool 0.3: +0.007, coastal +0.016 (significant) | **+0.001 [−0.006, +0.008]** | **Did not hold on test.** Also uses GEFS 2016–2019, i.e. later than the test years |
+| **Overall** | Promoted: terrain/coast features + coastal/inland calibration | +0.009 [+0.003, +0.015] | **+0.007 [+0.002, +0.012]** | **Shipped (v2)** |
+
+**Chennai 2015 replay with v2:**
+- **Day 1 rises from 11% Green to 18% Yellow ("Watch")**, so the flood day now gets a cross-check prompt.
+- The big-miss head does **not** flag it (1.4%). That extreme large miss is still missed.
+- Day 4 is unchanged: Orange, 40%.
+
+**Beyond the 2015 archive cutoff:** NCMRWF's operational ensemble (NEPS) is archived in **TIGGE from about Aug 2017 to the present**: daily runs, 10+ days ahead, precipitation included, via the ECMWF Data Store (free research account). That would restore run-to-run change, ensemble spread and recent years. A human must register the account.
 
 ### GEFS + ERA5 comparison model (Tanish's PR #2, backup track)
 
@@ -182,11 +202,11 @@ From the real NCMRWF run of 1 Dec 2015 against IMD, subdivision Tamil Nadu & Pud
 - **Caveat to say out loud:** 41 mm is the average over all of Tamil Nadu; Chennai itself got several hundred mm. Subdivision averaging dilutes local extremes.
 
 **What the trained NCMRWF model says** (2015 is a test year, so this is out-of-sample):
-- **Day 1 (2 Dec):** 11%, Green. **Missed.** The Day-1 lead time pulled the risk down.
+- **Day 1 (2 Dec):** model v2 gives **18%, Yellow "Watch"**; v1 gave 11%, Green. The big-miss watch does not flag it (1.4%), so the *size* of the miss is still not anticipated.
 - **Day 4:** 40%, Orange. Correct: that day busted (rain/no-rain).
-- **Day 5:** 20%, Yellow. Correct.
+- **Day 5:** 21%, Yellow. Correct.
 
-Present it as it is: the model flagged the continuing-rain phase and missed the first extreme day. That matches its measured weakness on magnitude busts.
+Present it as it is: v2 now prompts a cross-check on the flood day and flags the continuing-rain days, but no part of the system anticipated how large the Day-1 miss would be.
 
 ## Data questions
 

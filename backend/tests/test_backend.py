@@ -298,6 +298,18 @@ def test_non_admin_cannot_start_retraining(client, duty_h):
     assert r.status_code == 403
 
 
+def test_stale_runtime_bundle_is_ignored(tmp_path, monkeypatch):
+    """A runtime bundle trained with an older feature list must not be loaded."""
+    import json
+    import service_registry
+    monkeypatch.setenv("VISHWAS_RUNTIME_MODELS", str(tmp_path))
+    rt = tmp_path / "ncmrwf"
+    rt.mkdir()
+    (rt / "booster.txt").write_text("stale")
+    (rt / "metadata.json").write_text(json.dumps({"features": ["old_feature"]}))
+    assert service_registry.active_models_dir("ncmrwf") != rt
+
+
 def test_big_miss_route(client, observer_h):
     r = client.get("/api/v1/big-miss", params={"lead_day": 4, "cycle": CYCLE}, headers=observer_h)
     assert r.status_code == 200 and r.json()["count"] == 33

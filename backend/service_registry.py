@@ -31,10 +31,21 @@ def runtime_dir(source: str | None = None) -> Path:
     return base / (source or _source)
 
 
+def _compatible(bundle: Path) -> bool:
+    """A runtime bundle is usable only if it was trained with the current feature list; after a
+    code upgrade that changes features, an older retrained bundle would fail at predict time."""
+    import json
+    from vishwas_ml.features import FEATURES
+    try:
+        return json.loads((bundle / "metadata.json").read_text()).get("features") == FEATURES
+    except (OSError, ValueError):
+        return False
+
+
 def active_models_dir(source: str | None = None) -> Path:
-    """The retrained bundle if one exists, otherwise the committed baseline."""
+    """The retrained bundle if one exists and matches the current code, otherwise the committed baseline."""
     rt = runtime_dir(source)
-    if (rt / "booster.txt").exists() and (rt / "metadata.json").exists():
+    if (rt / "booster.txt").exists() and (rt / "metadata.json").exists() and _compatible(rt):
         return rt
     return load_config(source=source or _source)["models_dir"]
 
