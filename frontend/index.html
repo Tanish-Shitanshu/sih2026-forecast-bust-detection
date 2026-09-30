@@ -538,6 +538,30 @@ body.loading-data main section[data-view]{visibility:hidden}
 @keyframes assist-pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 8px rgba(198,40,40,0)}}
 .assist-send{border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:0 14px;height:38px;flex-shrink:0}
 .assist-status{font-size:.75rem;color:var(--muted);padding:0 16px 10px}
+/* ===== Landing page, government style ===== */
+.sech{border-bottom:0;position:relative;padding-bottom:12px;margin:40px 0 18px;font-size:1.375rem;color:var(--ink)}
+.sech::after{content:"";position:absolute;left:0;bottom:0;width:64px;height:4px;background:#F58220}
+.land-band{background:var(--sky);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:40px;padding:2px 0 36px}
+.land-band .sech{margin-top:30px}
+#v-home .how{grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;align-items:stretch}
+#v-home .how>div:first-child{display:flex;flex-direction:column}
+#v-home .how .pbar,#v-home .how .l-sb{display:none}
+#l-steps{grid-template-columns:1fr;grid-auto-rows:1fr;gap:10px;margin:0;flex:1}
+#l-steps .ps{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left:5px solid var(--line);font-weight:400;transition:border-color .2s,box-shadow .2s}
+#l-steps .ps[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line);border-left-color:#F58220;box-shadow:0 2px 10px rgba(12,35,64,.10)}
+#l-steps .psn{flex:none;width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
+#l-steps .ps[aria-selected="true"] .psn{background:#F58220}
+#l-steps .ps b{display:block;color:var(--ink);font-size:1rem;margin-bottom:3px}
+#l-steps .psb{display:block;font-size:.875rem;color:var(--muted);line-height:1.45}
+.rtabs{grid-template-columns:280px minmax(0,1fr)}
+.rtl button{min-height:58px}
+.infog{gap:16px}
+.infol{--c:var(--blue)!important;border-top:4px solid var(--blue);padding:18px;box-shadow:0 1px 3px rgba(12,35,64,.06)}
+.infol:hover{background:var(--panel);border-top-color:#F58220;box-shadow:0 4px 14px rgba(12,35,64,.12)}
+.infol .ii{background:var(--blue)}
+.infol b{font-size:1.0625rem;margin-bottom:4px}
+@media (max-width:1100px){.infog{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:860px){.infog{grid-template-columns:1fr}.rtabs{grid-template-columns:1fr}#l-steps{grid-auto-rows:auto}}
 </style>
 </head>
 <body class="out">
@@ -659,7 +683,7 @@ body.loading-data main section[data-view]{visibility:hidden}
       <div>
         <div class="pipe" id="l-steps" role="tablist" aria-label="How it works"></div>
         <div class="pbar"><i id="l-pbar"></i></div>
-        <div class="panel"><p class="pbody" id="l-sbody" role="status"></p></div>
+        <div class="panel l-sb"><p class="pbody" id="l-sbody" role="status"></p></div>
       </div>
       <div class="panel">
         <h3 class="mt" style="margin-bottom:6px">What a forecast bust looks like</h3>
@@ -668,6 +692,8 @@ body.loading-data main section[data-view]{visibility:hidden}
       </div>
     </div>
 
+  </div>
+  <div class="land-band"><div class="wrap">
     <h2 class="sech">Who uses Vishwas</h2>
     <p class="lead">Each person signs in with their own ID and holds one role. Each role opens a different workspace.</p>
     <div class="rtabs">
@@ -675,12 +701,14 @@ body.loading-data main section[data-view]{visibility:hidden}
       <div class="panel rp" id="l-rpanel" role="tabpanel"></div>
     </div>
 
+  </div></div>
+  <div class="wrap">
     <h2 class="sech">Information</h2>
     <div class="infog">
-      <a class="panel infol" href="#/methodology" style="--c:var(--teal)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg></span><div><b>Methodology</b>What Vishwas does and does not do, with two interactive tools.</div></a>
-      <a class="panel infol" href="#/sources" style="--c:var(--blue)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><div><b>Data sources</b>The three archives Vishwas learns from, and how they combine.</div></a>
-      <a class="panel infol" href="#/api" style="--c:var(--navy)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg></span><div><b>API</b>The interface a backend provides: endpoints, allowed roles and sample responses.</div></a>
-      <a class="panel infol" href="#/help" style="--c:var(--steel)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><div><b>Help and glossary</b>Accessibility, roles and permissions, and the meaning of each term.</div></a>
+      <a class="panel infol" href="#/methodology" style="--c:var(--teal)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg></span><div><b>Methodology</b>How Vishwas works, what counts as a bust, and how well it performs.</div></a>
+      <a class="panel infol" href="#/sources" style="--c:var(--blue)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><div><b>Data sources</b>NCMRWF forecasts, IMD rainfall and IMD boundaries, and how they combine.</div></a>
+      <a class="panel infol" href="#/api" style="--c:var(--navy)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg></span><div><b>API</b>The Vishwas REST API: endpoints, allowed roles and example responses.</div></a>
+      <a class="panel infol" href="#/help" style="--c:var(--steel)"><span class="ii"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></span><div><b>Help and glossary</b>Getting started, roles and permissions, accessibility and key terms.</div></a>
     </div>
   </div>
 </section>
@@ -1144,7 +1172,7 @@ body.loading-data main section[data-view]{visibility:hidden}
       <p>Prototype built for Smart India Hackathon 2026, Problem Statement 26079: AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts.</p>
     </div>
   </div>
-  <div class="wrap foot-b">Last reviewed: 30 September 2026<i class="vsep">|</i>Signed-in pages: model output replaying NCMRWF's 1993 to 2015 reforecast archive, not a live feed. Landing page and API samples: illustrative data.</div>
+  <div class="wrap foot-b">Last reviewed: 30 September 2026<i class="vsep">|</i>Signed-in pages: model output replaying NCMRWF's 1993 to 2015 reforecast archive, not a live feed. Landing-page map: sample.</div>
 </footer>
 
 <script src="india_map.js"></script>
@@ -1723,7 +1751,7 @@ function paintRot(){
   setTimeout(function(){el.textContent=ROT[S.rot];el.style.opacity=1},200);
 }
 function paintLandStep(){
-  $("#l-steps").innerHTML=LSTEPS.map(function(s,i){return '<button type="button" role="tab" class="ps" data-i="'+i+'" aria-selected="'+(S.landStep===i)+'">'+(i+1)+'. '+s.h+'</button>'}).join("");
+  $("#l-steps").innerHTML=LSTEPS.map(function(s,i){return '<button type="button" role="tab" class="ps" data-i="'+i+'" aria-selected="'+(S.landStep===i)+'"><span class="psn">'+(i+1)+'</span><span><b>'+s.h+'</b><span class="psb">'+s.b+'</span></span></button>'}).join("");
   $$("#l-steps .ps").forEach(function(b){b.addEventListener("click",function(){S.landStep=+b.dataset.i;S.landStepUser=true;paintLandStep()})});
   $("#l-pbar").style.width=((S.landStep+1)/LSTEPS.length*100)+"%";
   $("#l-sbody").textContent=LSTEPS[S.landStep].b;
