@@ -1,3 +1,5 @@
+> **Update (2026-09-30, later): Part B is finished.** The one-time test run was done. Terrain/coast features + coastal/inland calibration shipped as model v2 (NCMRWF test PR-AUC 0.534 -> 0.541, +0.007 [+0.002, +0.012]). The big-miss head shipped (`GET /api/v1/big-miss`, `action.big_miss_watch`, shown on the dashboard). GEFS pooling did not hold on test. Current numbers and the full record of what was tried are in `ml/README.md`. The only open item is TIGGE (NCMRWF NEPS, 2017-present), which needs a human-created ECMWF account.
+
 # Vishwas: progress handoff (verification pass + model improvement), 2026-09-30
 
 **Repo:** https://github.com/Tanish-Shitanshu/sih2026-forecast-bust-detection, branch **`main`** (all work below is merged and pushed: commit `c62fd95`).
