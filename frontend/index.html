@@ -623,6 +623,8 @@ body.hc .rp h4,body.hc .rp li{color:#fff}
         <ul class="fac" id="s-fac"></ul>
         <h3 class="sh2">Closest historical case</h3>
         <p id="s-an"></p>
+        <h3 class="sh2">Big-miss watch</h3>
+        <p id="s-bm" class="note" style="margin:0"></p>
         <div id="oc-sec">
           <h3 class="sh2">Mark outcome for this reading</h3>
           <div class="oc" id="oc">
@@ -1687,6 +1689,16 @@ function paintDash(){
     var a=ex.closest_analog;
     $("#s-an").textContent=a.date+", "+a.description+". Outcome: "+a.outcome+".";
   }).catch(function(){$("#s-fac").innerHTML='<li>Could not load factors from the backend.</li>';$("#s-an").textContent="Could not load the closest historical case."});
+  /* Big-miss head: risk that the forecast misses by a large amount (not only a rain/no-rain flip). */
+  $("#s-bm").textContent="Loading...";
+  apiFetch("/api/v1/action?subdivision="+encodeURIComponent(selCode)+"&lead_day="+selDay+"&cycle="+encodeURIComponent(cycleDate()))
+    .then(function(a){
+      if(S.day!==selDay||!S.sel||byId(D,S.sel).s.code!==selCode)return;
+      var w=a.big_miss_watch;
+      if(!w){$("#s-bm").textContent="Not available for this model.";return}
+      var pc=Math.round(w.probability*100);
+      $("#s-bm").textContent=w.flagged?("Flagged: "+pc+"% chance of a large miss. "+w.note):("Not flagged ("+pc+"% chance of a large miss).");
+    }).catch(function(){$("#s-bm").textContent="Could not load the big-miss watch."});
   $("#rank-h").textContent="Highest bust risk, Day "+S.day;
   $("#rank").innerHTML=D.slice().sort(function(x,y){return y.b-x.b}).slice(0,8).map(function(x,i){
     return '<li><button type="button" class="rk'+(S.sel===x.s.id?" on":"")+'" data-id="'+x.s.id+'"><span class="rn">'+(i+1)+'</span><span class="rname">'+esc(x.s.name)+'</span><span class="rbar"><i style="width:'+x.pct+'%;background:'+x.t.bg+'"></i></span><span class="rv">'+x.pct+'%</span></button></li>';

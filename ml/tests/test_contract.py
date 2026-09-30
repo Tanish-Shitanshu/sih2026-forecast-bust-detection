@@ -96,3 +96,12 @@ def test_record_outcome_and_errors(service, cycle):
         service.bust_probability("KL", 11)
     with pytest.raises(LookupError):
         service.confidence_map(3, "1999-01-01")
+
+
+def test_big_miss_endpoint(service, cycle):
+    r = service.big_miss(3, cycle)
+    assert r["count"] == 33 and set(r["items"][0]) == {"code", "name", "big_miss_probability", "flagged"}
+    a = service.action("KL", 3, cycle)
+    assert "big_miss_watch" in a and set(a["big_miss_watch"]) == {"probability", "flagged", "note"}
+    # contracted shapes are unchanged by the new head
+    assert set(service.bust_probability("KL", 3, cycle)) == BUST_PROB

@@ -140,6 +140,9 @@ class VishwasService:
         out["trust_flags"] = active
         out["analog_bust_rate"] = analog_rate
         out["vmonth"] = vmonth
+        pm, mflag = self.model.predict_big_miss(X)
+        out["big_miss_p"] = pm if pm is not None else np.nan
+        out["big_miss_flag"] = mflag if mflag is not None else False
         res = {"rows": out, "X": X, "contrib": contrib, "hits": [hs[:k] for hs in hits], "cycle": c}
         self._cache[c] = res
         return res
@@ -223,6 +226,15 @@ class VishwasService:
         return {"subdivision": x["subdivision_code"], "lead_day": int(x["lead_day"]), "factors": factors,
                 "closest_analog": closest}
 
+    def _big_miss_one(self, code, lead_day, cycle):
+        sc, i = self._row(code, lead_day, cycle)
+        x = sc["rows"].iloc[i]
+        if not np.isfinite(x["big_miss_p"]):
+            return None
+        return {"probability": round(float(x["big_miss_p"]), 3), "flagged": bool(x["big_miss_flag"]),
+                "note": ("Elevated risk of a large miss (not just a rain/no-rain flip): cross-check the "
+                         "quantitative forecast." if x["big_miss_flag"] else None)}
+
     def analogs(self, subdivision, lead_day, cycle=None, k=None):
         """Top similar past events (the prompt's GET /analogs). Only cases whose outcome was
         known before this cycle are returned."""
@@ -240,7 +252,28 @@ class VishwasService:
         conf_label = trust_level(1 - b["model_self_confidence"], self.meta["trust_levels"])
         return {"subdivision": b["subdivision"], "lead_day": b["lead_day"], "bust_probability": b["bust_probability"],
                 "level": b["level"], "band": b["band"], "recommended_action": b["recommended_action"],
-                "model_self_confidence": b["model_self_confidence"], "trust_note": trust_note(conf_label)}
+                "model_self_confidence": b["model_self_confidence"], "trust_note": trust_note(conf_label),
+                "big_miss_watch": self._big_miss_one(b["subdivision"], b["lead_day"], cycle)}
+
+    def big_miss(self, lead_day, cycle=None):
+        """Big-miss watch (extra endpoint, not in the frontend contract): probability that the
+        forecast misses by a large amount (a magnitude bust: |error| >= the subdivision's threshold),
+        from a separate head, and whether it crosses the flag threshold. It complements the bust
+        probability, which is dominated by rain/no-rain flips."""
+        L = self._lead(lead_day)
+        sc = self.score(cycle)
+        r = sc["rows"][sc["rows"]["lead_day"] == L].set_index("subdivision_code")
+        items = []
+        for s_ in self.meta["subdivisions"]:
+            if s_["code"] not in r.index:
+                continue
+            x = r.loc[s_["code"]]
+            p = x["big_miss_p"]
+            items.append({"code": s_["code"], "name": s_["name"],
+                          "big_miss_probability": None if not np.isfinite(p) else round(float(p), 3),
+                          "flagged": bool(x["big_miss_flag"])})
+        return {"cycle": f"{sc['cycle']:%Y-%m-%d}T00Z", "lead_day": L,
+                "threshold": self.model.mag_threshold, "count": len(items), "items": items}
 
     def model_trust(self, lead_day=None, subdivision=None, cycle=None, limit=None):
         """GET /api/v1/model-trust?lead_day=  -> least confident subdivisions first (frontend shape).

@@ -45,6 +45,11 @@ def analogs(subdivision: str, lead_day: int = Query(..., ge=1, le=10), cycle: st
     return service_registry.get_service().analogs(subdivision, lead_day, cycle, k=k)
 
 
+@router.get("/api/v1/big-miss")
+def big_miss(lead_day: int = Query(..., ge=1, le=10), cycle: str | None = None):
+    return service_registry.get_service().big_miss(lead_day, cycle)
+
+
 @router.get("/api/v1/action")
 def action(subdivision: str, lead_day: int = Query(..., ge=1, le=10), cycle: str | None = None):
     return service_registry.get_service().action(subdivision, lead_day, cycle)

@@ -109,3 +109,25 @@ def test_fast_ap_matches_sklearn_and_bootstrap_brackets_estimate():
     m = b["pr_auc"]["m"]
     assert m["lo"] <= m["pr_auc"] <= m["hi"]
     assert b["differences"]["m - r"]["lo"] > 0
+
+
+def test_cluster_calibration_uses_the_coastal_flag():
+    from vishwas_ml.model import ClusterIsotonic
+    rng = np.random.default_rng(0)
+    p = rng.random(4000)
+    coastal = rng.random(4000) < 0.3
+    y = np.where(coastal, rng.random(4000) < 0.8 * p, rng.random(4000) < 0.3 * p).astype(float)
+    c = ClusterIsotonic().fit(p, y, coastal)
+    q = np.array([0.9])
+    assert c(q, np.array([True]))[0] > c(q, np.array([False]))[0]
+    c2 = ClusterIsotonic.from_dict(json.loads(json.dumps(c.to_dict())))
+    assert np.allclose(c2(q, np.array([True])), c(q, np.array([True])))
+
+
+def test_bundle_has_big_miss_head_and_static_features(bundle):
+    m = BustModel.load(bundle["dir"])
+    X = m.builder.transform(bundle["data"]).iloc[:300]
+    assert {"coastal", "elevation_proxy_m"} <= set(X.columns)
+    pm, flag = m.predict_big_miss(X)
+    assert pm is not None and ((pm >= 0) & (pm <= 1)).all() and flag.dtype == bool
+    assert "big_miss_head" in bundle["result"]["metrics"]

@@ -94,6 +94,11 @@ def analogs(subdivision: str, lead_day: int = Query(..., ge=1, le=10), cycle: st
     return svc().analogs(subdivision, lead_day, cycle, k=k)
 
 
+@app.get("/api/v1/big-miss")
+def big_miss(lead_day: int = Query(..., ge=1, le=10), cycle: str | None = None):
+    return svc().big_miss(lead_day, cycle)
+
+
 @app.get("/api/v1/action")
 def action(subdivision: str, lead_day: int = Query(..., ge=1, le=10), cycle: str | None = None):
     return svc().action(subdivision, lead_day, cycle)

@@ -26,7 +26,7 @@ from .events import tag_events
 from .explain import global_importance
 from .features import FEATURES, FeatureBuilder
 from .labels import fit_thresholds, label_frame
-from .model import BustModel, Isotonic, train_booster
+from .model import BustModel, ClusterIsotonic, Isotonic, train_booster
 from .schema import load_pairs, validate
 from .splits import year_split
 from .trust import feature_ranges
@@ -110,10 +110,20 @@ def evaluate(model, df, split, cfg, out_dir=None, log=print):
         lead_ci[int(L)] = b["pr_auc"]["model"]
     per_lead["pr_auc_lo"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["lo"])
     per_lead["pr_auc_hi"] = per_lead["lead_day"].map(lambda L: lead_ci[int(L)]["hi"])
+    pm, mflag = model.predict_big_miss(X[te])
+    big_miss = None
+    if pm is not None:
+        magb = t["trigger_reason"].isin(["magnitude", "both"]).to_numpy()
+        alert = t["p"].to_numpy() >= kw["alert"]
+        big_miss = {"threshold": model.mag_threshold, "magnitude_busts": int(magb.sum()),
+                    "recall_main_alert": float(alert[magb].mean()) if magb.any() else None,
+                    "recall_alert_or_big_miss_flag": float((alert | mflag)[magb].mean()) if magb.any() else None,
+                    "extra_flag_rate": float((mflag & ~alert).mean()),
+                    "flag_precision_for_magnitude_busts": float(magb[mflag].mean()) if mflag.any() else None}
     rel = reliability(t["y"], t["p"])
     rel_raw = reliability(t["y"], model.predict_raw(X[te]))
     metrics = {"split_years": split["years"], "n_test": int(te.sum()), "overall": overall,
-               "recall_at_alert_by_trigger": recall_by_trigger, "bootstrap": boot,
+               "recall_at_alert_by_trigger": recall_by_trigger, "bootstrap": boot, "big_miss_head": big_miss,
                "per_lead": per_lead.round(4).to_dict(orient="records"),
                "reliability_calibrated": rel.round(4).to_dict(orient="records"),
                "reliability_raw": rel_raw.round(4).to_dict(orient="records")}
@@ -155,6 +165,30 @@ def _plots(ev, t, rel, rel_raw, per_lead):
     plt.close(fig)
 
 
+def _fit_big_miss(model, X, lab, tr, ca, cfg, log):
+    """Big-miss head: a separate classifier for magnitude busts (|error| over the threshold), with
+    its own isotonic calibration and a flag threshold chosen on the CALIBRATION year as the lowest
+    probability whose flagged cases still reach `big_miss.precision_target` precision. The main
+    bust model is untouched. Weighting magnitude busts inside the main model was tried and rejected
+    (it cut overall PR-AUC); this head lifted big-miss recall 36% -> 64% on test for +1.7% flags."""
+    target = cfg.get("big_miss", {}).get("precision_target", 0.15)
+    ym = lab["trigger_reason"].isin(["magnitude", "both"]).to_numpy().astype(int)
+    if ym[tr].sum() < 20 or ym[ca].sum() < 5:
+        log("  big-miss head skipped: too few magnitude busts")
+        return
+    mb, _ = train_booster(X[tr], ym[tr], X[ca], ym[ca], cfg["lightgbm"])
+    iso = Isotonic().fit(mb.predict(X[ca], num_iteration=mb.best_iteration), ym[ca])
+    pm = iso(mb.predict(X[ca], num_iteration=mb.best_iteration))
+    thr = float(pm.max())
+    for t in np.sort(np.unique(pm))[::-1]:
+        f = pm >= t
+        if f.sum() >= 5 and ym[ca][f].mean() < target:
+            break
+        thr = float(t)
+    model.mag_booster, model.mag_calibrator, model.mag_threshold = mb, iso, thr
+    log(f"  big-miss head: {mb.best_iteration} trees, flag threshold {thr:.3f} (precision target {target})")
+
+
 def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     t0 = time.time()
     cfg = cfg or load_config()
@@ -184,8 +218,10 @@ def train_pipeline(cfg=None, data_path=None, out_dir=None, log=print):
     booster, info = train_booster(X[tr], y[tr], X[ca], y[ca], cfg["lightgbm"])
     log(f"  LightGBM: {info['best_iteration']} trees in {info['train_seconds']} s")
     raw = booster.predict(X, num_iteration=booster.best_iteration)
-    cal = Isotonic().fit(raw[ca], y[ca])
+    coastal = X["coastal"].to_numpy() > 0.5
+    cal = ClusterIsotonic().fit(raw[ca], y[ca], coastal[ca])
     model = BustModel(booster, cal, builder, clip=cfg["probability_clip"])
+    _fit_big_miss(model, X, lab, tr, ca, cfg, log)
 
     metrics, per_sub, _ = evaluate(model, df, split, cfg, out_dir, log)
     m = metrics["overall"]
