@@ -17,6 +17,7 @@ deleted. Re-running skips dates already done; failed dates are listed at the end
 """
 import argparse
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -30,6 +31,7 @@ from vishwas_ml.ncmrwf_tigge import read_request  # noqa: E402
 
 WEIGHTS = ML / "data" / "weights_ncmrwf_neps.csv"
 AREA = [38, 68, 6, 98]  # N, W, S, E
+_DECODE = threading.Lock()  # eccodes/cfgrib are not thread-safe: downloads run in parallel, decoding does not
 STATE_VARS = ["mean_sea_level_pressure", "surface_pressure", "2_m_temperature", "2_m_dewpoint_temperature",
               "10_m_u_component_of_wind", "10_m_v_component_of_wind"]
 
@@ -44,7 +46,7 @@ def fetch_one(client, day, tmp, weights, retries=3):
     parts = []
     for name, vars_, hours in (("rain", ["total_precipitation"], range(0, 241, 24)), ("state", STATE_VARS, [0])):
         f = tmp / f"{day:%Y%m%d}_{name}.grib"
-        for attempt in range(retries):
+        for attempt in range(retries if not (f.exists() and f.stat().st_size > 1000) else 0):
             try:
                 client.retrieve("tigge-forecasts", _req(day, vars_, hours)).download(str(f))
                 break
@@ -52,7 +54,8 @@ def fetch_one(client, day, tmp, weights, retries=3):
                 if attempt == retries - 1:
                     raise
                 time.sleep(30 * (attempt + 1))
-        parts.append(to_subdivisions(read_request(f), weights))
+        with _DECODE:
+            parts.append(to_subdivisions(read_request(f), weights))
         f.unlink(missing_ok=True)
         for idx in tmp.glob(f"{f.name}*.idx"):
             idx.unlink(missing_ok=True)
