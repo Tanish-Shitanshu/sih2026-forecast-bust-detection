@@ -30,6 +30,7 @@ FEATURE_GROUPS = {
     "era5_tp_rel": "recent_rain",
     "hist_bust_rate": "history", "bust_threshold_mm": "history", "clim_wet_frac": "history",
     "month_sin": "season", "month_cos": "season", "region_id": "season",
+    "elevation_proxy_m": "location", "coastal": "location", "coastal_x_fc": "location", "elev_x_fc": "location",
 }
 FEATURES = list(FEATURE_GROUPS)
 
@@ -91,6 +92,8 @@ class FeatureBuilder:
         self.region_of = {s["code"]: s["region_key"] for s in meta["subdivisions"]}
         self.region_ids = {r["key"]: i for i, r in enumerate(meta["regions"])}
         self.rain_thr = bust_cfg["rain_threshold_mm"]
+        self.coastal = sorted(meta.get("event_sets", {}).get("COAST", []))
+        self.elev = {}
         self.era5_timing = era5_timing
         self.era5_shift_days = int(era5_shift_days)
         self.fitted = False
@@ -107,6 +110,10 @@ class FeatureBuilder:
         self.state_std = g.std().clip(lower=1e-6)
         # Precipitation is skewed: store the mean for a ratio instead of a z-score.
         self.tp_mean = st.groupby(["subdivision_code", "month"])["total_precipitation"].mean()
+        # terrain: hypsometric elevation from the source's own sea-level vs surface pressure (train years)
+        pm = st.groupby("subdivision_code")[["mslp", "surface_pressure"]].mean()
+        elev = 8400.0 * np.log(pm["mslp"] / pm["surface_pressure"])
+        self.elev = {k: float(v) for k, v in elev.items() if np.isfinite(v)}
 
         vd = train.assign(valid=_valid(train)).drop_duplicates(["subdivision_code", "valid"])
         vd = vd.assign(vmonth=vd["valid"].dt.month, wet=vd["observed_rain"] >= self.rain_thr)
@@ -222,6 +229,12 @@ class FeatureBuilder:
                     rate[own] = _attach_rate(keys[own], tb, lr)
         X["hist_bust_rate"] = rate
 
+        # static location: terrain and coast (coastal subdivisions: frontend's coastal event set)
+        X["elevation_proxy_m"] = df["subdivision_code"].map(self.elev).to_numpy(float)
+        X["coastal"] = df["subdivision_code"].isin(self.coastal).to_numpy(float)
+        X["coastal_x_fc"] = X["coastal"] * X["fc_log1p"]
+        X["elev_x_fc"] = X["elevation_proxy_m"] / 1000.0 * X["fc_log1p"]
+
         doy = valid.dt.dayofyear.to_numpy(float)
         X["month_sin"] = np.sin(2 * np.pi * doy / 365.25)
         X["month_cos"] = np.cos(2 * np.pi * doy / 365.25)
@@ -233,6 +246,7 @@ class FeatureBuilder:
             return f.reset_index().to_dict(orient="list")
         return {
             "region_of": self.region_of, "region_ids": self.region_ids, "rain_thr": self.rain_thr,
+            "coastal": self.coastal, "elev": self.elev,
             "era5_timing": self.era5_timing, "era5_shift_days": self.era5_shift_days, "train_years": self.train_years,
             "state_mean": frame(self.state_mean), "state_std": frame(self.state_std),
             "tp_mean": frame(self.tp_mean), "clim": frame(self.clim),
@@ -246,6 +260,7 @@ class FeatureBuilder:
     def from_state(cls, d):
         self = cls.__new__(cls)
         self.region_of, self.region_ids, self.rain_thr = d["region_of"], d["region_ids"], d["rain_thr"]
+        self.coastal, self.elev = d.get("coastal", []), d.get("elev", {})
         self.era5_timing, self.train_years = d["era5_timing"], d["train_years"]
         self.era5_shift_days = d.get("era5_shift_days", 0)
         idx = ["subdivision_code", "month"]

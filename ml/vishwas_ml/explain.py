@@ -117,6 +117,11 @@ def describe(group, x, ctx):
         return f"Rain on the issue day {word} the usual for {month}"
     if group == "history":
         return (f"Forecasts here bust {x['hist_bust_rate']:.0%} of the time at Day {L} in {month}")
+    if group == "location":
+        e = x.get("elevation_proxy_m", float("nan"))
+        hill = f"hilly terrain (about {e:,.0f} m)" if np.isfinite(e) and e > 600 else None
+        parts = [p for p in ("a coastal subdivision" if x.get("coastal", 0) > 0.5 else None, hill) if p]
+        return ("Location: " + " with ".join(parts)) if parts else "Location: inland, low-lying subdivision"
     if group == "season":
         return f"Seasonal pattern for {month} in {ctx['region_name']}"
     return group

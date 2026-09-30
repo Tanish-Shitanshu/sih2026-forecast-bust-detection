@@ -296,3 +296,8 @@ def test_role_change_applies_to_existing_token(client, admin_h):
 def test_non_admin_cannot_start_retraining(client, duty_h):
     r = client.post("/api/v1/retraining", headers=duty_h)
     assert r.status_code == 403
+
+
+def test_big_miss_route(client, observer_h):
+    r = client.get("/api/v1/big-miss", params={"lead_day": 4, "cycle": CYCLE}, headers=observer_h)
+    assert r.status_code == 200 and r.json()["count"] == 33

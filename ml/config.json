@@ -37,6 +37,10 @@
 
   "probability_clip": [0.01, 0.99],
 
+  "big_miss": {
+    "precision_target": 0.15
+  },
+
   "analogs": {
     "k": 5,
     "k_trust": 25

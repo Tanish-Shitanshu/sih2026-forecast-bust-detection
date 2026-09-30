@@ -58,23 +58,69 @@ class Isotonic:
         return cls(np.asarray(d["x"], float), np.asarray(d["y"], float))
 
 
+class ClusterIsotonic:
+    """One isotonic map per subdivision cluster (coastal vs inland), fit on the calibration
+    year. Coastal subdivisions bust differently (terrain-driven rain the ~60 km model under-
+    resolves), so one shared map was mis-calibrated for them. Chosen on validation years
+    2010-2012; on test 2013-2015 it lifted PR-AUC 0.534 -> 0.541 [+0.002, +0.012]."""
+
+    def __init__(self, maps=None):
+        self.maps = maps or {}
+
+    def fit(self, p, y, coastal):
+        coastal = np.asarray(coastal, bool)
+        for key, m in (("coastal", coastal), ("inland", ~coastal)):
+            self.maps[key] = Isotonic().fit(np.asarray(p)[m], np.asarray(y)[m])
+        return self
+
+    def __call__(self, p, coastal=None):
+        p = np.asarray(p, float)
+        if coastal is None:  # no cluster information: average of the two maps
+            return 0.5 * (self.maps["coastal"](p) + self.maps["inland"](p))
+        coastal = np.asarray(coastal, bool)
+        return np.where(coastal, self.maps["coastal"](p), self.maps["inland"](p))
+
+    def to_dict(self):
+        return {"clusters": {k: v.to_dict() for k, v in self.maps.items()}}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls({k: Isotonic.from_dict(v) for k, v in d["clusters"].items()})
+
+
+def load_calibrator(d):
+    return ClusterIsotonic.from_dict(d) if "clusters" in d else Isotonic.from_dict(d)
+
+
 class BustModel:
-    def __init__(self, booster, calibrator, builder, clip=(0.01, 0.99), recalibrator=None, metadata=None):
+    def __init__(self, booster, calibrator, builder, clip=(0.01, 0.99), recalibrator=None, metadata=None,
+                 mag_booster=None, mag_calibrator=None, mag_threshold=None):
         self.booster, self.calibrator, self.builder = booster, calibrator, builder
         self.clip, self.recalibrator, self.metadata = tuple(clip), recalibrator, metadata or {}
+        # optional big-miss head: P(magnitude bust), flagged at a threshold picked on the calibration year
+        self.mag_booster, self.mag_calibrator, self.mag_threshold = mag_booster, mag_calibrator, mag_threshold
 
     def predict_raw(self, X):
         return self.booster.predict(X[FEATURES], num_iteration=self.booster.best_iteration or None)
 
-    def calibrate(self, raw):
-        p = self.calibrator(raw)
+    def calibrate(self, raw, coastal=None):
+        p = self.calibrator(raw, coastal) if isinstance(self.calibrator, ClusterIsotonic) else self.calibrator(raw)
         if self.recalibrator is not None:
             p = self.recalibrator(p)
         return np.clip(p, *self.clip)
 
     def predict(self, X):
         """Calibrated bust probability."""
-        return self.calibrate(self.predict_raw(X))
+        coastal = X["coastal"].to_numpy() > 0.5 if "coastal" in X else None
+        return self.calibrate(self.predict_raw(X), coastal)
+
+    def predict_big_miss(self, X):
+        """(probability of a magnitude bust, flag) from the big-miss head, or (None, None)."""
+        if self.mag_booster is None:
+            return None, None
+        pm = self.mag_calibrator(self.mag_booster.predict(X[FEATURES], num_iteration=self.mag_booster.best_iteration or None))
+        pm = np.clip(pm, 0.0, 1.0)
+        return pm, pm >= self.mag_threshold
 
     def contributions(self, X):
         """Exact TreeSHAP values (log-odds of the raw model), shape (n, n_features);
@@ -91,6 +137,11 @@ class BustModel:
         (d / "features.json").write_text(json.dumps(self.builder.state_dict()))
         meta = dict(self.metadata, clip=list(self.clip))
         (d / "metadata.json").write_text(json.dumps(meta, indent=2, default=str))
+        if self.mag_booster is not None:
+            self.mag_booster.save_model(str(d / "booster_big_miss.txt"),
+                                        num_iteration=self.mag_booster.best_iteration or None)
+            (d / "calibrator_big_miss.json").write_text(json.dumps(dict(self.mag_calibrator.to_dict(),
+                                                                        threshold=self.mag_threshold)))
         rc = d / "recalibrator.json"
         if self.recalibrator is not None:
             rc.write_text(json.dumps(self.recalibrator.to_dict()))
@@ -101,9 +152,15 @@ class BustModel:
     def load(cls, d):
         d = Path(d)
         booster = lgb.Booster(model_file=str(d / "booster.txt"))
-        cal = Isotonic.from_dict(json.loads((d / "calibrator.json").read_text()))
+        cal = load_calibrator(json.loads((d / "calibrator.json").read_text()))
         builder = FeatureBuilder.from_state(json.loads((d / "features.json").read_text()))
         meta = json.loads((d / "metadata.json").read_text())
         rc = d / "recalibrator.json"
         recal = Isotonic.from_dict(json.loads(rc.read_text())) if rc.exists() else None
-        return cls(booster, cal, builder, clip=meta.get("clip", (0.01, 0.99)), recalibrator=recal, metadata=meta)
+        mb = mc = mt = None
+        if (d / "booster_big_miss.txt").exists():
+            mb = lgb.Booster(model_file=str(d / "booster_big_miss.txt"))
+            md = json.loads((d / "calibrator_big_miss.json").read_text())
+            mc, mt = Isotonic.from_dict(md), float(md["threshold"])
+        return cls(booster, cal, builder, clip=meta.get("clip", (0.01, 0.99)), recalibrator=recal, metadata=meta,
+                   mag_booster=mb, mag_calibrator=mc, mag_threshold=mt)
