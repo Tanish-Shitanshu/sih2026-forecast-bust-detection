@@ -4,3 +4,4 @@
 # the whole pandas/lightgbm/shap environment VishwasService needs.
 pyjwt==2.15.1
 bcrypt==5.0.0
+python-multipart==0.0.32

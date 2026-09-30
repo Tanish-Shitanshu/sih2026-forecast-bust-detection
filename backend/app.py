@@ -14,13 +14,16 @@ from contextlib import asynccontextmanager
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml"))
 
+import env
+env.load_env()  # backend/.env (SARVAM_API_KEY etc.) -- before any module reads os.environ at import time
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import db
 import service_registry
-from routers import auth_routes, ml_routes, outcomes, users, settings, retraining, audit
+from routers import auth_routes, ml_routes, outcomes, users, settings, retraining, audit, assistant
 
 
 @asynccontextmanager
@@ -64,3 +67,4 @@ app.include_router(users.router)
 app.include_router(settings.router)
 app.include_router(retraining.router)
 app.include_router(audit.router)
+app.include_router(assistant.router)
