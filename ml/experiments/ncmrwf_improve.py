@@ -32,8 +32,9 @@ from vishwas_ml.model import Isotonic  # noqa: E402
 from vishwas_ml.schema import load_pairs  # noqa: E402
 
 SIH = ML.parents[1]
-FC_CACHE = SIH / "s2s_raw" / "ncmrwf_fc_1993_2015.parquet"      # per-lead S2S subdivision fields
-IMD_DAILY = SIH / "s2s_raw" / "imd_subdivision_daily_1992_2016.parquet"
+EXT = ML / "data" / "external"                                 # committed copies (see data/external/README.md)
+FC_CACHE = EXT / "ncmrwf_fc_1993_2015.parquet"                  # per-lead S2S subdivision fields
+IMD_DAILY = EXT / "imd_subdivision_daily_1992_2025.parquet"
 OUT = ML / "experiments" / "results"
 COASTAL_WEAK = ["CST.KA", "KL", "KNK/GA"]
 ALERT = 0.38                                                   # Orange+ (frontend tier boundary)
@@ -51,7 +52,7 @@ def imd_daily():
     sys.path.insert(0, str(ML / "scripts"))
     from build_s2s_pairs import imd_subdivision_daily
     from vishwas_ml.subdivision_weights import load_subdivisions
-    subs = load_subdivisions(SIH / "geo_data" / "indian_met_zones.v2")
+    subs = load_subdivisions(EXT / "indian_met_zones" / "indian_met_zones.v2")
     d = imd_subdivision_daily(SIH / "geo_data" / "imd", list(range(1992, 2017)), subs)
     d = d.rename(columns={"valid_date": "date"}) if "valid_date" in d else d
     d.to_parquet(IMD_DAILY, index=False)

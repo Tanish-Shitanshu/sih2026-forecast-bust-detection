@@ -25,8 +25,10 @@ from vishwas_ml.subdivision_weights import load_subdivisions  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parts", required=True)
-    ap.add_argument("--imd-dir", required=True)
-    ap.add_argument("--shapefile", required=True)
+    ap.add_argument("--obs", default=str(ML / "data" / "external" / "imd_subdivision_daily_1992_2025.parquet"),
+                    help="precomputed IMD subdivision daily rain (date, subdivision_code, observed_rain_mm)")
+    ap.add_argument("--imd-dir", help="rebuild observations from imdlib .grd files instead of --obs")
+    ap.add_argument("--shapefile", default=str(ML / "data" / "external" / "indian_met_zones" / "indian_met_zones.v2"))
     ap.add_argument("--out", default=str(ML / "data" / "ncmrwf_neps_pairs.parquet"))
     a = ap.parse_args()
     files = sorted(Path(a.parts).glob("*.parquet"))
@@ -34,7 +36,11 @@ def main():
     fc["date"] = pd.to_datetime(fc["date"])
     years = sorted(set(fc["date"].dt.year) | set((fc["date"] + pd.Timedelta(days=10)).dt.year)
                    | set((fc["date"] - pd.Timedelta(days=1)).dt.year))
-    obs = imd_subdivision_daily(a.imd_dir, years, load_subdivisions(a.shapefile))
+    if a.imd_dir:
+        obs = imd_subdivision_daily(a.imd_dir, years, load_subdivisions(a.shapefile))
+    else:
+        obs = pd.read_parquet(a.obs)
+        obs["date"] = pd.to_datetime(obs["date"])
     pairs = build_pairs(fc, obs)
     n_all = len(pairs)
     pairs = pairs[pairs["observed_rain_mm"].notna() & pairs["forecast_rain_mm"].notna()]

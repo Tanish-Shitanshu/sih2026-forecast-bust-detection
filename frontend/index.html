@@ -595,7 +595,7 @@ body.loading-data main section[data-view]{visibility:hidden}
       <div class="fact"><div class="fbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></div><div><span class="fn" data-to="33">0</span><span class="fl">meteorological subdivisions monitored</span></div></div>
       <div class="fact"><div class="fbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><span class="fn" data-to="10">0</span><span class="fl">days of lead time, Day 1 to Day 10</span></div></div>
       <div class="fact"><div class="fbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.2"/></svg></div><div><span class="fn" data-to="4">0</span><span class="fl">warning levels, on the IMD colour code</span></div></div>
-      <div class="fact"><div class="fbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div><div><span class="fn" data-to="3">0</span><span class="fl">data sources: ERA5, IMD Gridded Rainfall, NCMRWF NWP archives</span></div></div>
+      <div class="fact"><div class="fbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div><div><span class="fn" data-to="3">0</span><span class="fl">data sources: NCMRWF forecasts, IMD rainfall, IMD boundaries</span></div></div>
     </div>
   </div>
 
@@ -815,7 +815,7 @@ body.loading-data main section[data-view]{visibility:hidden}
 <section id="v-admin" data-view="admin" hidden>
   <div class="wrap">
     <h1 class="vt" data-i18n="vt_admin">Administration</h1>
-    <p class="lead">Manage users and roles, set the bust definition and start a retraining run. Changes last until the page is reloaded in this prototype.</p>
+    <p class="lead">Manage users and roles, set the bust definition and start a retraining run. Changes are saved on the server and recorded in the audit log.</p>
     <div class="panel">
       <h2 class="ph">Users and roles</h2>
       <div class="tblwrap"><table class="tbl">
@@ -838,7 +838,7 @@ body.loading-data main section[data-view]{visibility:hidden}
       <div class="panel">
         <h2 class="ph">Bust definition</h2>
         <form id="st-form">
-          <p style="margin-bottom:10px">A forecast counts as a bust when its error is at least the larger of a fixed threshold and the regional percentile of past errors, and the rain category is wrong.</p>
+          <p style="margin-bottom:10px">A forecast counts as a bust when its error is at least the larger of a fixed threshold and the regional percentile of past errors, or when the rain / no-rain call is wrong.</p>
           <div class="frm">
             <div><label for="st-thr">Fixed error threshold (mm)</label><input id="st-thr" type="number" min="1" max="500"></div>
             <div><label for="st-pct">Regional percentile</label><input id="st-pct" type="number" min="50" max="99"></div>
@@ -854,7 +854,7 @@ body.loading-data main section[data-view]{visibility:hidden}
         <div class="rt-track rt-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="rt-prog"><i class="rt-bar" id="rt-bar"></i></div>
         <p class="rt-stage" id="rt-stage" role="status">Not running</p>
         <div class="acts"><button type="button" class="btn rt-btn" id="rt-btn" data-act="retrain">Start retraining</button></div>
-        <p class="note">Trains a real model on approved outcomes only, on a background job. This can take a few minutes.</p>
+        <p class="note">Retrains the model with the saved bust definition and recalibrates it with approved outcomes, as a background job. This takes about a minute.</p>
       </div>
     </div>
     <div class="panel" style="margin-top:16px">
@@ -989,13 +989,13 @@ body.loading-data main section[data-view]{visibility:hidden}
 <section id="v-api" data-view="api" hidden>
   <div class="wrap doc wide">
     <h1 class="vt" data-i18n="vt_api">API</h1>
-    <p class="lead">The interface a backend will provide. Select an endpoint to see who may call it, what it takes, and a sample response built from this prototype's illustrative data. Requests carry a token issued at sign-in, and the role in the token decides access.</p>
+    <p class="lead">The Vishwas REST API. Select an endpoint to see who may call it, what it takes and an example response. Requests carry a token issued at sign-in, and the server checks the user's role on every request.</p>
     <div class="dayrow"><label class="dl" for="api-day">Sample lead day</label><select id="api-day" class="api-sel"></select></div>
     <div class="api-g">
       <div class="apil" id="api-list" role="tablist" aria-label="Endpoints"></div>
       <div class="panel" id="api-detail"></div>
     </div>
-    <p class="note">Planned interface. This prototype does not call these endpoints. The responses shown are generated in the browser from illustrative data.</p>
+    <p class="note">Example responses in the documented format. The live server runs at port 8000, with interactive documentation at /docs.</p>
   </div>
 </section>
 
@@ -1254,9 +1254,9 @@ var ROT=["monsoon depressions","heavy rainfall events","western disturbances","c
 var NOTICES=["Signed-in pages show model output for NCMRWF reforecast cycles","Four roles: duty forecaster, senior forecaster, administrator and observer","Methodology, data sources and help are open to everyone","Text size and dark mode controls are in the top bar","Sign in to open your workspace, the dashboard, Model Trust and the feedback log"];
 var FC=[8,14,22,38,52,62,55,40,28,18],OB=[7,13,20,34,30,18,20,25,24,17];
 var SRC=[
- {n:"ERA5 reanalysis",d:"ECMWF's global reanalysis of the atmosphere, published through the Copernicus Climate Change Service. It gives hourly estimates of atmospheric states from 1940 onward.",u:"A verification reference for past atmospheric states, so the pattern around each past forecast is known."},
- {n:"IMD Gridded Rainfall",d:"The India Meteorological Department's gridded daily rainfall archive for India, at 0.25 degree resolution, from 1901 onward.",u:"The observed rainfall that past forecasts are checked against at subdivision level."},
- {n:"NCMRWF NWP archives",d:"Archived numerical weather prediction runs from NCMRWF, the record of what was predicted.",u:"The forecast half of every forecast and observation pair, which builds the historical bust record."}
+ {n:"NCMRWF forecast archive",d:"NCMRWF's S2S reforecasts (Unified Model coupled system, about 60 km), 1993 to 2015, from NCMRWF's Research Data Server. Rainfall for Day 1 to Day 10, plus the model's own sea-level pressure, surface pressure and 10 m winds. The operational NEPS ensemble (2017 to 2025, from the TIGGE archive) is being added.",u:"The forecast half of every forecast and observation pair, and the weather state at issue time."},
+ {n:"IMD Gridded Rainfall",d:"The India Meteorological Department's gridded daily rainfall archive for India, at 0.25 degree resolution, from 1901 onward.",u:"The observed rainfall that past forecasts are checked against, and the rain of the day before issue."},
+ {n:"IMD subdivision boundaries",d:"IMD's official meteorological subdivision boundaries (Indian_met_zones), used for 33 subdivisions.",u:"Turns gridded forecasts and observations into subdivision averages, and draws the maps."}
 ];
 var STAGES=["Preparing data","Training the model","Calibrating probabilities","Validating on held-out years"];
 var HI={skip:"मुख्य सामग्री पर जाएं",sr:"स्क्रीन रीडर एक्सेस",hc:"डार्क मोड",sub:"पूर्वानुमान विश्वसनीयता कंसोल",org:"राष्ट्रीय मध्यम अवधि मौसम पूर्वानुमान केंद्र",n_home:"होम",n_over:"कार्यक्षेत्र",n_dash:"डैशबोर्ड",n_reg:"क्षेत्र",n_trust:"मॉडल विश्वसनीयता",n_fb:"प्रतिक्रिया लॉग",n_admin:"प्रशासन",n_meth:"कार्यप्रणाली",n_src:"डेटा स्रोत",n_api:"एपीआई",n_help:"सहायता",ws_duty:"शिफ्ट डेस्क",ws_senior:"समीक्षा डेस्क",ws_admin:"नियंत्रण कक्ष",ws_observer:"ब्रीफिंग",tk:"बुलेटिन",si:"साइन इन",so:"साइन आउट",vt_login:"साइन इन",vt_dash:"डैशबोर्ड",vt_reg:"क्षेत्रीय सारांश",vt_trust:"मॉडल विश्वसनीयता",vt_fb:"प्रतिक्रिया लॉग",vt_admin:"प्रशासन",vt_meth:"कार्यप्रणाली",vt_src:"डेटा स्रोत",vt_api:"एपीआई",vt_help:"सहायता"};
@@ -1817,7 +1817,7 @@ function ovObserver(D){
     blk("b-red","Bust-risk warnings","o-red",red,"subdivisions at Warning on Day "+S.day,"#/dashboard","Open the dashboard"),
     blk("b-vio","Model confidence","o-vio",reduced(D),"subdivisions with reduced confidence on Day "+S.day,"#/model-trust","Open Model Trust"),
     blk("b-blu","Approved outcomes","o-fb",st.total,st.cp+"% confirmed correct","#/feedback","Open the feedback log"),
-    blk("b-teal","Data sources","o-src",3,"ERA5, IMD Gridded Rainfall, NCMRWF NWP archives","#/sources","Read about the data")
+    blk("b-teal","Data sources","o-src",3,"NCMRWF forecasts, IMD rainfall, IMD boundaries","#/sources","Read about the data")
   ]);
   h+='<div class="two" style="margin-top:20px;align-items:start"><div class="panel"><h2 class="ph">Situation summary, Day '+S.day+'</h2><p style="margin-bottom:8px">'+fl+' of 33 subdivisions are at Alert or Warning: '+red+' at Warning and '+orange+' at Alert.</p><p style="margin-bottom:8px">The highest bust risk is in '+esc(top.s.name)+', at '+top.pct+'% ('+top.t.lab.toLowerCase()+')'+(top.ev?', linked to a '+esc(top.ev):'')+'.</p><p style="margin-bottom:8px">Model confidence is reduced for '+reduced(D)+' subdivisions. The lowest is '+esc(low.s.name)+', at '+low.conf+'%.</p><p>'+esc(worst.r.name)+' has the largest share of flagged subdivisions: '+worst.f+' of '+worst.n+'.</p></div><div class="panel"><h2 class="ph">By region</h2><div class="stack">'+regs.map(function(x){var c=TIERS.map(function(t2){return x.ds.filter(function(d){return d.t.k===t2.k}).length});return '<div><b>'+esc(x.r.name)+'</b>: '+x.f+' of '+x.n+' at Alert or Warning<div class="tbar" role="img" aria-label="'+TIERS.map(function(t2,i){return t2.short+" "+c[i]}).join(", ")+'" style="margin-top:4px">'+TIERS.map(function(t2,i){return '<i style="flex:'+c[i]+';background:'+t2.bg+'"></i>'}).join("")+'</div></div>'}).join("")+'</div></div></div>';
   h+='<p class="rolenote" style="margin-top:20px">This account is view only. To record or review outcomes, ask an administrator for a different role.</p>';

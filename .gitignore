@@ -238,3 +238,6 @@ backend/vishwas.db
 
 # Bundles written by retraining jobs (committed baselines stay in ml/models/)
 backend/runtime_models/
+
+# NEPS/TIGGE downloads (raw GRIB + parts); committed copies live in ml/data/neps_parts/
+ml/neps_download/
