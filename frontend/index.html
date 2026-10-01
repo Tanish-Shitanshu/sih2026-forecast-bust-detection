@@ -1385,7 +1385,9 @@ function reduced(D){return D.filter(function(d){return d.u>=.55}).length}
    illustrative calc() sample, as already labelled in the UI) is driven by the
    real backend: NCMRWF archive ends 2015-12-01, so the whole signed-in
    workspace is a historical replay of one selected forecast cycle. */
-var API_BASE="http://localhost:8000";
+var API_BASE=(location.hostname==="localhost"||location.hostname==="127.0.0.1")
+  ?"http://localhost:8000"
+  :"https://sih2026-forecast-bust-detection.onrender.com";
 function apiUrl(p){return API_BASE+p}
 function apiFetch(path,opts){
   opts=opts||{};
